@@ -2,7 +2,7 @@
 
 ## [VKinder](https://vk.com/vkinder10)
 
-![logo](sticker.png)
+[![logo](sticker.png)](https://vk.com/vkinder10)
 
 **Исполнили:** 
 
