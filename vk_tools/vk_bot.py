@@ -5,6 +5,8 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 # from random import randrange
 from vk_api.utils import get_random_id
+import matchmaker
+from matchmaker import Matchmaker
 from pprint import pprint
 
 
@@ -17,16 +19,20 @@ class VkBot:
         print(f"Создан объект бота! (id={self.bot_session.app_id})")
         # self._COMMANDS = ["ПРИВЕТ", "ПОИСК ПАРЫ", "ПОКА"]
 
-    def send_msg(self, user_id, message):
+    def send_msg(self, event, message):
         """"        получает id пользователя ВК <user_id>, и сообщение ему        """
-        self.bot_api.messages.send(peer_id=user_id, message=message, random_id=get_random_id())
+        try:
+            self.bot_api.messages.send(peer_id=event.peer_id,
+                                       message=message,
+                                       random_id=get_random_id())
+        except vk_api.exceptions.ApiError as no_permission:
+            print(f'\t{no_permission}')
 
     def write_db_all_group_users(self):
         tools = vk_api.VkTools(self.bot_session)
         ids = tools.get_all('groups.getMembers', 1000, {'group_id': self._BOT_CONFIG['group_id']})
-        count = ids['count']
         ids_list = ids['items']
-        print(f'{count} членов в группе')
+        print(f'{ids["count"]} членов в группе')
         pprint(ids_list)
         return ids_list
 
@@ -59,20 +65,22 @@ class VkBot:
             if event.type == VkEventType.MESSAGE_NEW:
                 if event.to_me:
                     text = event.text.lower()
-                    print('Новое сообщение:\t', end="")
-                    print("личное" if event.user_id > 0 else "групповое")
-                    print(f"от: {self.get_user_title(event.user_id)})")
-                    print("*---", event.text)
+                    print('Новое сообщение:\t', end='')
+                    print('личное' if event.user_id > 0 else '', end=' ')
+                    print(f'из чата {event.chat_id}' if event.from_chat else '')
+                    print(f'от: {self.get_user_title(event.user_id)})')
+                    print('*---', event.text)
+                    # print('*---', event.from_user, event.from_chat, event.from_group, event.from_me)
                     # Oтветы:
-                    if text == "привет":
-                        self.send_msg(event.user_id, f"Хай, {self.get_user_name(event.user_id)}! :)")
-                    elif text == "пока":
-                        self.send_msg(event.user_id, "Чао :(")
-                    elif text == "найди друзей":
-                        self.send_msg(event.user_id, "Начинаю поиск друзей!")
+                    if text == 'привет':
+                        self.send_msg(event, f'Хай, {self.get_user_name(event.user_id)}! :)')
+                    elif text == 'пока':
+                        self.send_msg(event, 'Чао :(')
+                    elif text == 'найди друзей':
+                        self.send_msg(event, 'Начинаю поиск друзей!')
                         self.write_db_all_group_users()
                     else:
-                        self.send_msg(event.user_id, "Не понимаю...")
+                        self.send_msg(event, 'Не понимаю...')
 
             elif event.type == VkBotEventType.MESSAGE_REPLY:
                 print('Новое сообщение:')
