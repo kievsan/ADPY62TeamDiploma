@@ -1,3 +1,4 @@
 psycopg2-binary
 psycopg2
 vk_api
+requests~=2.28.1

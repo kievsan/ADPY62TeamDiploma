@@ -1,3 +1,4 @@
-.idea/
+..idea/
+vk_tools/__pycache__/
+tests/__pycache__/
 .about/
-solution/__pycache__/
