@@ -1,4 +1,8 @@
 #
+from msilib import Table
+from tokenize import String
+
+from sqlalchemy import MetaData, Column, Integer, Boolean, ForeignKey
 
 from bot_config.config import get_config
 import sqlalchemy as sq
@@ -26,27 +30,27 @@ def model_check(model_name, title):
 class VkGroup(Base):  # Users
     __tablename__ = model_check('VKGroup', 'VK group table')  # 'vk_group'
 
-    vk_id = sq.Column(sq.Integer, primary_key=True)
+    vk_id = Column(Integer, primary_key=True)
 
     def __str__(self):
         return f'VkGroup user with vk_id = {self.vk_id}'
 
 
 class Advisable(Base):  # Candidate
-    __tablename__ = model_check('Advisable', 'Advisables table for VK group user')   # 'user_advisable'
+    __tablename__ = model_check('Advisable', 'Advisables table for VK group user')  # 'user_advisable'
 
-    vk_id = sq.Column(sq.Integer, primary_key=True)
+    vk_id = Column(Integer, primary_key=True)
 
     def __str__(self):
         return f'Advisables table for user with vk_id = {self.vk_id}'
 
 
 class Chosen(Base):  # MarkList
-    __tablename__ = model_check('Chosen', 'Table of interpersonal relationships')    # 'chosen'
+    __tablename__ = model_check('Chosen', 'Table of interpersonal relationships')  # 'chosen'
 
-    vk_id = sq.Column(sq.Integer, primary_key=True)
-    chosen_vk_id = sq.Column(sq.Integer, primary_key=True)
-    liked = sq.Column(sq.Boolean, nullable=False)
+    vk_id = Column(Integer, primary_key=True)
+    chosen_vk_id = Column(Integer, primary_key=True)
+    liked = Column(Boolean, nullable=False)
 
     # user_id = sq.Column(sq.Integer, sq.ForeignKey('users.user_id'), nullable=False)
     # candidate_id = sq.Column(sq.Integer, sq.ForeignKey('candidate.candidate_id'), nullable=False)
@@ -69,12 +73,14 @@ class Chosen(Base):  # MarkList
 class ChosenUser(Base):  # MarkList
     __tablename__ = model_check('Chosen', 'Table of relationships of the chosen user')  # 'user_relationships'
 
-    vk_id = sq.Column(sq.Integer, primary_key=True)
-    chosen_vk_id = sq.Column(sq.Integer, primary_key=True)
-    liked = sq.Column(sq.Boolean, nullable=False)
+    vk_id = Column(Integer, primary_key=True)
+    chosen_vk_id = Column(Integer, primary_key=True)
+    liked = Column(Boolean, nullable=False)
 
     def __str__(self):
         return f'Chosen user with vk_id = {self.chosen_id}'
+
+
 #
 #
 # class VkGroupRelationsFavorite(Base):  # MarkList
@@ -95,6 +101,7 @@ def drop_tables(engine):
 
 def clear_table():
     pass
+
 
 # def show_all_candidates_id(some_session, user_vk_id: int) -> list:
 #     """Функция возвращает список кандидатов без отметок для конкретного пользователя"""
@@ -187,3 +194,13 @@ def clear_table():
 #         update({'like': False, 'dislike': False})
 #     some_session.commit()
 #     return f'Кандидату {candidate_vk_id} убрана оценка.'
+
+def create_table():
+    meta = MetaData()
+
+    # employees = Table('employees', meta,
+    #                   Column('employee_id', Integer, primary_key=True),
+    #                   Column('employee_name', String(60), nullable=False, key='name'),
+    #                   Column('employee_dept', Integer, ForeignKey("departments.department_id"))
+    #                   )
+    # employees.create(engine)

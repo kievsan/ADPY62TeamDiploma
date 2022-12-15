@@ -13,7 +13,7 @@ from vk_api.utils import get_random_id
 
 from bot_config.config import get_config
 from vk_tools.vk_bot_menu import VkBotMenu
-from vk_tools.matchmaker import Matchmaker
+from vk_tools.matchmaker import Matchmaker, field_value
 
 
 def split_str_to_list(string=' ', splitter=','):
@@ -225,8 +225,10 @@ class VkBot(Matchmaker):
                                     message='...And hello again,\n{}!\nИщем по фильтрам\n{}.\t'.format(
                                         self.get_user_name(event),
                                         std_filter if std_filter else 'Стандартный фильтр не задан...'))
+
                     self.search_advisable_users(group_id=self.group_id, client_id=event.message['from_id'],
-                                                search_filter=search_filter, vk_tools=self.vk_tools)
+                                                search_filter=search_filter,
+                                                vk_tools=self.vk_tools, vk_api_methods=self.vk_api)
                 elif self.exit(event):
                     pass
                 else:
@@ -400,7 +402,7 @@ class VkBot(Matchmaker):
     def get_user_city(self, event):
         """ Получаем город пользователя"""
         user = self.get_user(event)
-        return user["city"]["title"]
+        return user["city"]
 
     def get_user_title(self, event):
         """ Получаем кратко пользователя"""
