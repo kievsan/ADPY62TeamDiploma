@@ -84,7 +84,7 @@ class Matchmaker(VkBot):
             self.checker = StandardChecker(client_id=client_id, search_filter=search_filter,
                                            api_methods=self.vk_api_methods)
             db.add_all(orm.Advisable(vk_id=user.vk_id) for user in db.query(orm.VkGroup).all()
-                       if self.checker.is_advisable_user_by_standard(vk_id=user.vk_id))
+                       if self.checker.is_advisable_user(vk_id=user.vk_id))
         else:
             print('Стандартный фильтр не задан...')
             db.add_all(orm.Advisable(vk_id=user.vk_id) for user in db.query(orm.VkGroup).all())
