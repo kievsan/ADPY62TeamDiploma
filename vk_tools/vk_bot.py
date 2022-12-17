@@ -114,7 +114,6 @@ class VkBot:
             text = event.message['text'].lower()
             # Oтветы:
             try:
-                self.menu.filter = True
                 if event.from_chat:
                     self.send_msg_use_bot_dialog(event)
                 elif text == menu['male']['command'].lower() or text == menu['male']['button'].lower():
@@ -138,7 +137,6 @@ class VkBot:
                 elif self.exit(event):
                     pass
                 else:
-                    self.menu.filter = False
                     if not event.from_chat:
                         self.start_mode(event, 'Не понимаю...')
                 msg = self.send_filter(event, 'Настроен Фильтр для поиска\t'
