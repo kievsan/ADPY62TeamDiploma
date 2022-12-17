@@ -19,10 +19,9 @@ def get_standard_filter(search_filter={}) -> dict:
         return std
     except KeyError as key_err:
         print(f'\nОшибка данных: отсутствует ключ {key_err}\t( Matchmaker.get_standard_filter() )')
-        return {}
     except Exception as other:
         print('\nОшибка в Matchmaker.get_standard_filter():' + f'\n\t{other}')
-        return {}
+    return {}
 
 
 def in_int_deviation(val_dev: int, val: int, check_val: int) -> bool:
@@ -76,9 +75,9 @@ class StandardChecker(VkUserChecker):
         super(StandardChecker, self).__init__(client_id, api_methods, search_filter, self._skill)
 
     def is_advisable_user(self, vk_id: str) -> bool:
-        super(StandardChecker, self).is_advisable_user_by_standard(vk_id)
+        super(StandardChecker, self).is_advisable_user(vk_id)
         bot_filter: dict = get_standard_filter(self.search_filter)
-        if not self.get_control_attr(bot_filter):
+        if not self.get_control_attr_msg(bot_filter):
             return False
         person_filter = dict([api_field, False] for api_field in bot_filter.get('filter_api_fields', '').split(', '))
         bot_fields = bot_filter['filter_bot_fields']
