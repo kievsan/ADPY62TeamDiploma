@@ -13,6 +13,7 @@ from vk_tools.vk_bot import VkBot
 from vk_tools.standard_checker import StandardChecker, get_standard_filter
 from bot_config.config import get_config
 from db_tools import orm_models as orm
+from vk_tools.checker import VkUserChecker
 
 
 # app = FastAPI()
@@ -25,7 +26,7 @@ class Matchmaker(VkBot):
         self._DB_CONFIG: dict = get_config('db', db)
         self.engine = sqlalchemy.create_engine(self.get_DSN())  # <class 'sqlalchemy.engine.base.Engine'>
         self.SessionLocal = sessionmaker(bind=self.engine)  # <class 'sqlalchemy.orm.session.sessionmaker'>
-        self.checker = None
+        self.checkers = []
         if bool(self._DB_CONFIG['overwrite']):
             orm.drop_tables(self.engine)
         orm.create_tables(self.engine)
@@ -34,6 +35,10 @@ class Matchmaker(VkBot):
     def get_DSN(self) -> str:
         db = self._DB_CONFIG
         return 'postgresql://{}:{}@{}/{}'.format(db["login"], db["password"], db["server"], db["dbase name"])
+
+    def add_checker(self, checker: VkUserChecker) -> list:
+        self.checkers.append(checker)
+        return self.checkers
 
     #
     # @staticmethod
@@ -75,24 +80,35 @@ class Matchmaker(VkBot):
         print('Deleted records in Advisable')
         if search_mode != "No mass requests":
             pass
-        # pprint(search_filter['standard'])   # -------------------
         #        ----------  Стандартный поиск  -----------
         bot_filter: dict = get_standard_filter(search_filter=search_filter)
         print('\n------ {}:\t'.format(search_filter['standard']['description'].strip().upper()), end='')
         if bot_filter['buttons']:
             print(bot_filter['buttons'])
-            self.checker = StandardChecker(client_id=client_id, search_filter=search_filter,
-                                           api_methods=self.vk_api_methods)
-            db.add_all(orm.Advisable(vk_id=user.vk_id) for user in db.query(orm.VkGroup).all()
-                       if self.checker.is_advisable_user(vk_id=user.vk_id))
+            self.checkers.append(StandardChecker(client_id=client_id, search_filter=search_filter,
+                                                 api_methods=self.vk_api_methods))
         else:
             print('Стандартный фильтр не задан...')
+        #   ----------  Поиск по интересам  -----------
+        #   InterestChecker
+        #
+        #   ----------  Продвинутый поиск  -----------
+        #   AdvancedChecker
+        #
+        if len(self.checkers):
+            db.add_all(orm.Advisable(vk_id=user.vk_id) for user in db.query(orm.VkGroup).all()
+                       if self.check_user(vk_id=user.vk_id))
+        else:
             db.add_all(orm.Advisable(vk_id=user.vk_id) for user in db.query(orm.VkGroup).all())
+
         db.commit()
         advisable_users = list(user.vk_id for user in db.query(orm.Advisable).all())
         print(f'\n{advisable_users} --> was pulled into Advisable')
         db.close()
         return advisable_users
+
+    def check_user(self, vk_id):
+        return len(self.checkers) == sum(checker.is_advisable_user(vk_id=vk_id) for checker in self.checkers)
 
     def print_advisable(self):
         pass
