@@ -266,19 +266,27 @@ def get_bot_menu_config_json():
                                         'max_buttons_peer_line': '2',
                                         'last_one_found_id': 0,
                                         'services': {
-                                            'next': {
-                                                'button': 'Следующий',
-                                                'command': '/>',
+                                            'save': {
+                                                'button': 'Нравится',
+                                                'command': '/+',
                                                 'filter': '',
                                                 'service_code': '12321',
                                                 'description': '',
                                                 'max_buttons_peer_line': '',
                                                 'services': {}},
-                                            'save': {
-                                                'button': 'Сохранить',
-                                                'command': '/+',
+                                            'ban': {
+                                                'button': 'В бан!',
+                                                'command': '/-',
                                                 'filter': '',
                                                 'service_code': '12322',
+                                                'description': '',
+                                                'max_buttons_peer_line': '',
+                                                'services': {}},
+                                            'next': {
+                                                'button': 'Следующий',
+                                                'command': '/>',
+                                                'filter': '',
+                                                'service_code': '12323',
                                                 'description': '',
                                                 'max_buttons_peer_line': '',
                                                 'services': {}},
@@ -286,7 +294,7 @@ def get_bot_menu_config_json():
                                                 'button': 'Выход',
                                                 'command': '/:',
                                                 'filter': '',
-                                                'service_code': '12323',
+                                                'service_code': '12324',
                                                 'description': 'Выход из режима просмотра результатов поиска',
                                                 'max_buttons_peer_line': '',
                                                 'services': {}}

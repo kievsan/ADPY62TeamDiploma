@@ -1,19 +1,16 @@
 #
 
-import json
 from random import randrange
 from pprint import pprint
 
 import requests
 import vk_api
-from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType, VkBotMessageEvent
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 from bot_config.config import get_config
 from vk_tools.vk_bot_menu import VkBotMenu
-# from vk_tools.matchmaker import Matchmaker
 from vk_tools.standard_checker import StandardChecker, get_standard_filter
 
 
@@ -85,8 +82,6 @@ class VkBot:
         return keyboard.get_keyboard()
 
     def start(self):
-        # print()
-        # pprint(self.__dict__)   # -----------------
         # Работа с сообщениями
         while True:
             print('Запущен бот группы id =', self.longpoll.group_id)
@@ -210,7 +205,8 @@ class VkBot:
                                     message='...And hello again,\n{}!\nИщем по фильтрам\n{}.\t'.format(
                                         self.get_user_name(),
                                         std_filter if std_filter else 'Стандартный фильтр не задан...'))
-                    self.send_msg(message='Идёт поиск подходящих пиплов...')
+                    self.send_msg(message='Терпение! Идёт поиск подходящих пиплов...',
+                                  attachment='doc49903553_642595119')
                     self.search_advisable_users(client_id=self.event.message['from_id'], search_filter=search_filter)
                 elif self.exit():
                     pass
@@ -358,11 +354,11 @@ class VkBot:
         print(message)
         return post
 
-    def send_msg(self, peer_id='', message='', keyboard=None):
+    def send_msg(self, peer_id='', message='', keyboard=None, attachment=''):
         """" Получает id пользователя ВК <user_id>, и сообщение ему """
         if not peer_id:
             peer_id = self.event.message["peer_id"]
-        post = {'peer_id': peer_id, 'random_id': get_random_id(), 'message': message}
+        post = {'peer_id': peer_id, 'random_id': get_random_id(), 'message': message, 'attachment': attachment}
         if keyboard:
             post['keyboard'] = keyboard  # .get_keyboard()
         self.send_post(post)
