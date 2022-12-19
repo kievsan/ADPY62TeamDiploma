@@ -59,10 +59,9 @@ def get_db_config_json():
         'server': 'localhost:5432',
         'scheme': 'public',
         "overwrite": True,
-        'VK group table': 'vk_group',
-        'Advisables table for VK group user': 'user_advisable',
-        'Table of relationships of the chosen user': 'user_relationships',
-        'Table of interpersonal relationships': 'chosen'
+        'VkinderUser table for bot fans': 'vkinder_users',
+        'Most-most users table': 'most_most_users',
+        'Table of relationships of db': 'bridge'
     }
 
 

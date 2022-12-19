@@ -1,15 +1,10 @@
 #
-from msilib import Table
-# from tokenize import String
 
 from sqlalchemy import MetaData, Column, Integer, Boolean, String, ForeignKey
 from sqlalchemy.orm import declarative_base
-
 from bot_config.config import get_config
-import sqlalchemy as sq
 
 Base = declarative_base()
-
 __DB_CONFIG__ = get_config('db', 'db.cfg')
 
 
@@ -27,34 +22,33 @@ def model_check(model_name, title):
         quit(1)
 
 
-class VkGroup(Base):  # Users
-    __tablename__ = model_check('VKGroup', 'VK group table')  # 'vk_group'
+class VkinderUser(Base):  # Users
+    __tablename__ = model_check('VkinderUser', 'VkinderUser table for bot fans')  # 'vkinder_users'
 
-    id = Column(Integer, primary_key=True)
-    # vk_id = Column(Integer, primary_key=True)
-
-    def __str__(self):
-        return f'VkGroup user with id = {self.id}'
-
-
-class Advisable(Base):  # Candidate
-    __tablename__ = model_check('Advisable', 'Advisables table for VK group user')  # 'user_advisable'
-
-    id = Column(Integer, primary_key=True)
-    # vk_id = Column(Integer, primary_key=True)
-    liked = Column(Boolean, nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
 
     def __str__(self):
-        return f'user with id = {self.id} from Advisable table'
+        return f'VkinderUser id = {self.id}'
 
 
-class Chosen(Base):  # MarkList
-    __tablename__ = model_check('Chosen', 'Table of interpersonal relationships')  # 'chosen'
+class MostMostUser(Base):
+    __tablename__ = model_check('MostMostUser', 'Most-most users table')  # 'most_most_users'
 
-    id = Column(Integer, primary_key=True)
-    vk_id = Column(Integer, primary_key=True)
-    chosen_vk_id = Column(Integer, primary_key=True)
-    liked = Column(Boolean, nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    ban = Column(Boolean, nullable=False)
+
+    def __str__(self):
+        return f'MostMostUser id = {self.id}e'
+
+
+class Bridge(Base):
+    __tablename__ = model_check('Bridge', 'Table of relationships of db')  # 'bridge'
+
+    user_id = Column(Integer, primary_key=True)
+    ban_id = Column(Integer, primary_key=True)
+
+    def __str__(self):  # не уверен в верности метода.
+        return f'Bridge with user_id = {self.user_id} and ban_id = {self.ban_id}'
 
     # user_id = sq.Column(sq.Integer, sq.ForeignKey('users.user_id'), nullable=False)
     # candidate_id = sq.Column(sq.Integer, sq.ForeignKey('candidate.candidate_id'), nullable=False)
@@ -64,27 +58,13 @@ class Chosen(Base):  # MarkList
     # user = relationship(Users, backref='mark_list')
     # candidate = relationship(Candidate, backref='mark_list')
 
-    def __str__(self):  # не уверен в верности метода.
-        return f'Chosen vk_id = {self.id} for user vk_id = {self.id}'
+
         # if self.like and self.dislike is False:
         #     return f'Candidate {self.candidate_id} for user {self.user_id} has {self.like}'
         # elif self.like is False and self.dislike:
         #     return f'Candidate {self.candidate_id} for user {self.user_id} has {self.dislike}'
         # else:
         #     return f'Candidate {self.candidate_id} for user {self.user_id} has not been reviewed'
-
-
-class ChosenUser(Base):  # MarkList
-    __tablename__ = model_check('Chosen', 'Table of relationships of the chosen user')  # 'user_relationships'
-
-    id = Column(Integer, primary_key=True)
-    chosen_vk_id = Column(Integer, primary_key=True)
-    liked = Column(Boolean, nullable=False)
-
-    def __str__(self):
-        return f'Chosen user with id = {self.id}'
-
-
 #
 #
 # class VkGroupRelationsFavorite(Base):  # MarkList
@@ -97,6 +77,7 @@ class ChosenUser(Base):  # MarkList
 def create_tables(engine):
     Base.metadata.create_all(engine)
     var = Base.metadata.schema
+    return var
 
 
 def drop_tables(engine):

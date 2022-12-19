@@ -146,9 +146,11 @@ class VkBot:
                                        )['message'] if self.menu.get_filter_string() else ''
             except KeyError as key_err:
                 self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
-                                        f' в search_standard_filter_mode_events(self, event)', menu)
+                                        f' в search_standard_filter_mode_events', menu)
+                # raise key_err
             except Exception as other:
                 self.my_except(other)
+                # raise other
 
     def my_except(self, err: Exception = None, msg='', menu: dict = None):
         if msg:
@@ -185,6 +187,7 @@ class VkBot:
                 self.my_except(key_err, f'Попытка взять значение по ошибочному-1 ключу {key_err}', menu)
             except Exception as other:
                 self.my_except(other)
+                raise other
 
     def search_mode_events(self):
         menu = self.menu.services
@@ -246,9 +249,12 @@ class VkBot:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
             except KeyError as key_err:
-                self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}', menu)
+                self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
+                                        f' в matchmaker_mode_events', menu)
+                # raise key_err
             except Exception as other:
                 self.my_except(other)
+                # raise other
 
     def start_mode_events(self):
         menu = self.menu.services
@@ -281,9 +287,12 @@ class VkBot:
                     else:
                         self.start_mode(message='Не понимаю...', inline=True)
                 except KeyError as key_err:
-                    self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}', menu)
+                    self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
+                                            f' в start_mode_events', menu)
+                    # raise key_err
                 except Exception as other:
                     self.my_except(other)
+                    # raise other
 
         elif self.event.type == VkBotEventType.MESSAGE_REPLY:
             print('\nНовое сообщение:')
