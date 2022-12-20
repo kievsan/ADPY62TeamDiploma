@@ -59,9 +59,9 @@ def get_db_config_json():
         'server': 'localhost:5432',
         'scheme': 'public',
         "overwrite": True,
-        'VkinderUser table for bot fans': 'vkinder_users',
-        'Most-most users table': 'most_most_users',
-        'Table of relationships of db': 'bridge'
+        'Vkinder table for VKbot fans': 'vkinders',
+        'VKIdol users table': 'vk_idols',
+        'VKinder connections table of db relationships': 'vk_connections'
     }
 
 
