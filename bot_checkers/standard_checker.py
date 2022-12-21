@@ -1,10 +1,9 @@
 # Проверяем пользователей на соответствие СТАНДАРТНОМУ фильтру
 
 from datetime import datetime, date
-from pprint import pprint
 
-from vk_api.vk_api import VkApi, VkApiMethod
-from vk_tools.checker import VkUserChecker  # базовый класс
+from vk_api.vk_api import VkApiMethod
+from bot_checkers.checker import VkUserChecker  # базовый класс
 
 
 def get_standard_filter(search_filter) -> dict:

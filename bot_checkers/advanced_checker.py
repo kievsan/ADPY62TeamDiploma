@@ -1,6 +1,6 @@
 #
 
-from vk_tools.checker import VkUserChecker
+from bot_checkers.checker import VkUserChecker
 from vk_api.vk_api import VkApiMethod
 
 

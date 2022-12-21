@@ -9,16 +9,14 @@ import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
-from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+from vk_api.bot_longpoll import VkBotEventType
 from vk_tools.vk_bot import VkBot
-from vk_api import VkUpload
 
-from vk_tools.standard_checker import StandardChecker, get_standard_filter
-from vk_tools.free_user_case_checker import LegitimacyUserChecker
+from bot_checkers.standard_checker import StandardChecker, get_standard_filter
+from bot_checkers.free_user_case_checker import LegitimacyUserChecker
 from bot_config.config import get_config
 from db_tools import orm_models as orm
 from db_tools.orm_models import VKinder, VkIdol
-from vk_tools.checker import VkUserChecker
 
 
 class Matchmaker(VkBot):
@@ -121,21 +119,16 @@ class Matchmaker(VkBot):
             return err
 
         def get_foto_attachment(user: dict):
-            photos = []
-            if user.get('photo_id', ''):
-                photos.append(user['photo_id'])
-            if user.get('photo_max', ''):
-                photos.append(user['photo_max'])
-            if user.get('photo_max_origin', ''):
-                photos.append(user['photo_max_origin'])
-            # attachments = []
-            # for photo_url in photos:
-            #     image = requests.Session().get(photo_url, stream=True)
-                # photo = self.vk_upload.photo_messages(photos=image.raw)[0]
-                # pprint(self.vk_upload.photo_messages(photos=image.raw))
-                # attachments.append('photo{}_{}'.format(photo['owner_id'], photo['id']))
-            # return ','.join(attachments)
-            return ','.join(photos)
+            photo_vk_url = user.get('photo_max', '')
+            photo_url = photo_vk_url if photo_vk_url else user.get('photo_max_origin', '')
+            if photo_url:
+                img = requests.get(photo_url, stream=True)
+                params = self.vk_upload.photo_messages(img.raw)[0]
+                attachment = 'photo{}_{}_{}'.format(
+                    params['owner_id'], params['id'], params['access_key'])
+            else:
+                attachment = user.get('photo_id', '')
+            return attachment
 
         def next_button() -> dict:
             """
@@ -194,5 +187,5 @@ class Matchmaker(VkBot):
                                         f' в search_advisable_mode_events', menu)
                 raise key_err
             except Exception as other:
-                self.my_except(other)
+                # self.my_except(other)
                 raise other
