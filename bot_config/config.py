@@ -58,7 +58,7 @@ def get_db_config_json():
         'dbase name': 'vkinder',
         'server': 'localhost:5432',
         'scheme': 'public',
-        "overwrite": True,
+        "overwrite": False,
         'Vkinder table for VKbot fans': 'vkinders',
         'VKIdol users table': 'vk_idols',
         'VKinder connections table of db relationships': 'vk_connections'
@@ -211,7 +211,7 @@ def get_bot_menu_config_json():
                                                         'services': {}},
                                                     'city': {
                                                         'button': 'Город',
-                                                        'command': '/city',
+                                                        'command': '/city:',
                                                         'filter': '',
                                                         'filter_api_field': 'city',
                                                         'filter_api_field_value': '',
