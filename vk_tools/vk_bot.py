@@ -101,7 +101,7 @@ class VkBot:
                     elif self.menu.service_name == 'standard':
                         self.search_standard_filter_mode_events()
                     elif self.menu.service_name == 'advisable':
-                        self.search_advisable_mode_events()
+                        self.works_search_team()
                     else:
                         self.start_mode_events()
             except requests.exceptions.ReadTimeout as timeout:
@@ -209,7 +209,7 @@ class VkBot:
                                         std_filter if std_filter else 'Стандартный фильтр не задан...'))
                     self.send_msg(message='Терпение! Идёт поиск подходящих пиплов...',
                                   attachment='doc49903553_642595119')
-                    self.search_advisable_users(client_id=self.event.message['from_id'], search_filter=search_filter)
+                    self.start_search_team(client_id=self.event.message['from_id'], search_filter=search_filter)
                 elif self.exit():
                     pass
                 else:
@@ -221,10 +221,10 @@ class VkBot:
                 self.my_except(other)
                 raise other
 
-    def search_advisable_users(self, client_id, search_filter):
+    def start_search_team(self, client_id, search_filter):
         print('Модуль в разработке!')
 
-    def search_advisable_mode_events(self):
+    def works_search_team(self):
         print('Модуль в разработке!')
 
     def matchmaker_mode_events(self):

@@ -28,7 +28,7 @@ class Matchmaker(VkBot):
         self.engine = sqlalchemy.create_engine(self.get_DSN())  # <class 'sqlalchemy.engine.base.Engine'>
         self.SessionLocal = sessionmaker(bind=self.engine)  # <class 'sqlalchemy.orm.session.sessionmaker'>
         self.db: Session = None
-        self.checkers = []
+        self.filters = []
         self.client_id = None
         self.chosen_vk_users = None
         if bool(self._DB_CONFIG['overwrite']):
@@ -40,15 +40,15 @@ class Matchmaker(VkBot):
         db = self._DB_CONFIG
         return 'postgresql://{}:{}@{}/{}'.format(db["login"], db["password"], db["server"], db["dbase name"])
 
-    def add_checker(self, checker: object) -> list:
-        self.checkers.append(checker)
-        return self.checkers
+    def add_filter(self, checker: object) -> list:
+        self.filters.append(checker)
+        return self.filters
 
-    def search_advisable_users(self, client_id: int, search_filter: dict):
+    def start_search_team(self, client_id: int, search_filter: dict):  # search_advisable_users
         """
-        Подключение разных фильтров и интерфейса
-        :param client_id:
-        :param search_filter:
+        Создание поисковой команды. Подключение необходимых фильтров и интерфейса
+        :param client_id:   vk_id собеседника бота, который ищет подходящих пользователей VK
+        :param search_filter:   условия стандартного поиска
         :return:
         """
         self.client_id = client_id
@@ -61,15 +61,15 @@ class Matchmaker(VkBot):
             self.db.add(VKinder(vk_id=client_id, first_visit_date=date.today()))
         self.chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
         ban = self.chosen_vk_users.filter(VkIdol.ban)
-        self.add_checker(LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
-                                              ban_ids=list(ban_user.vk_idol_id for ban_user in ban)))
+        self.add_filter(LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
+                                             ban_ids=list(ban_user.vk_idol_id for ban_user in ban)))
         #        ----------  Стандартный поиск  -----------
         bot_filter: dict = get_standard_filter(search_filter=search_filter)
         print('\n------ {}:\t'.format(search_filter['standard']['description'].strip().upper()), end='')
         if bot_filter['buttons']:
             print(bot_filter['buttons'])
-            self.add_checker(StandardFilter(client_id=client_id, search_filter=search_filter,
-                                            api_methods=self.vk_api_methods))
+            self.add_filter(StandardFilter(client_id=client_id, search_filter=search_filter,
+                                           api_methods=self.vk_api_methods))
         else:
             print('Стандартный фильтр не задан...')
 
@@ -82,14 +82,19 @@ class Matchmaker(VkBot):
 
         self.menu.service['last_one_found_id'] = 0
         self.event.message['text'] = self.menu.services['next']['button']  # 'СЛЕДУЮЩИЙ'
-        self.search_advisable_mode_events()
+        self.works_search_team()
 
-    def search_advisable_mode_events(self, requests_block=10, requests_step=1):
+    def works_search_team(self, requests_block=10, requests_step=1):  # search_advisable_mode_events
         """
         Поиск (прогон по фильтрам), просмотр и выбор подходящих и забаненных пользователей
         :param requests_block: кол-во пользователей в api-запросах
         :param requests_step: шаг проверяемых в блоке api-запроса
         :return: user (из полученного json)
+        :def
+        :check_user(user: dict) -> bool:
+        :db_close():
+        :get_foto_attachment(user: dict):
+        :get_next_user() -> dict:
         """
         menu = self.menu.services
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
@@ -100,8 +105,8 @@ class Matchmaker(VkBot):
             :param user: из json
             :return:
             """
-            for checker in self.checkers:
-                if not checker.is_advisable_user(user):
+            for filter_ in self.filters:
+                if not filter_.is_advisable_user(user):
                     return False
             return True
 
@@ -135,7 +140,7 @@ class Matchmaker(VkBot):
                 attachment = user.get('photo_id', '')
             return attachment
 
-        def next_button() -> dict:
+        def get_next_user() -> dict:
             """
             Операция "Следующий"
             :return: user (из полученного json)
@@ -172,15 +177,15 @@ class Matchmaker(VkBot):
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
-                    if not next_button():
+                    if not get_next_user():
                         self.exit()
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=False, rec_date=date.today()))
-                    if not next_button():
+                    if not get_next_user():
                         self.exit()
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=True, rec_date=date.today()))
-                    if not next_button():
+                    if not get_next_user():
                         self.exit()
                 elif self.exit():
                     db_close()
@@ -192,5 +197,5 @@ class Matchmaker(VkBot):
                                         f' в search_advisable_mode_events', menu)
                 raise key_err
             except Exception as other:
-                # self.my_except(other)
+                self.my_except(other)
                 raise other
