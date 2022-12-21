@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from vk_api.vk_api import VkApiMethod
 
 
-class VkUserChecker(ABC):
+class VkUserFilter(ABC):
     _skill = 'A matchmaker Search Engine'
 
     def __init__(self, client_id: int, api_methods: VkApiMethod, search_filter: dict, skill=_skill):

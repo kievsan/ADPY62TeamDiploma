@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from vk_api.bot_longpoll import VkBotEventType
 from vk_tools.vk_bot import VkBot
 
-from bot_checkers.standard_checker import StandardChecker, get_standard_filter
-from bot_checkers.free_user_case_checker import LegitimacyUserChecker
+from filters.standard_filter import StandardFilter, get_standard_filter
+from filters.free_user_case_filter import LegitimacyUserFilter
 from bot_config.config import get_config
 from db_tools import orm_models as orm
 from db_tools.orm_models import VKinder, VkIdol
@@ -61,15 +61,15 @@ class Matchmaker(VkBot):
             self.db.add(VKinder(vk_id=client_id, first_visit_date=date.today()))
         self.chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
         ban = self.chosen_vk_users.filter(VkIdol.ban)
-        self.add_checker(LegitimacyUserChecker(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
-                                               ban_ids=list(ban_user.vk_idol_id for ban_user in ban)))
+        self.add_checker(LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
+                                              ban_ids=list(ban_user.vk_idol_id for ban_user in ban)))
         #        ----------  Стандартный поиск  -----------
         bot_filter: dict = get_standard_filter(search_filter=search_filter)
         print('\n------ {}:\t'.format(search_filter['standard']['description'].strip().upper()), end='')
         if bot_filter['buttons']:
             print(bot_filter['buttons'])
-            self.add_checker(StandardChecker(client_id=client_id, search_filter=search_filter,
-                                             api_methods=self.vk_api_methods))
+            self.add_checker(StandardFilter(client_id=client_id, search_filter=search_filter,
+                                            api_methods=self.vk_api_methods))
         else:
             print('Стандартный фильтр не задан...')
 
@@ -119,6 +119,11 @@ class Matchmaker(VkBot):
             return err
 
         def get_foto_attachment(user: dict):
+            """
+            Получение фото и прикрепление её к сообщению
+            :param user: из ответа на api-запрос
+            :return: attachment: фото будет передано в сообщение attachment-параметром. Если нет, то ссылкой или ''
+            """
             photo_vk_url = user.get('photo_max', '')
             photo_url = photo_vk_url if photo_vk_url else user.get('photo_max_origin', '')
             if photo_url:

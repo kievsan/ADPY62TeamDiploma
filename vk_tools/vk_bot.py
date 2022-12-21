@@ -12,7 +12,7 @@ from vk_api.utils import get_random_id
 
 from bot_config.config import get_config
 from vk_tools.vk_bot_menu import VkBotMenu
-from bot_checkers.standard_checker import get_standard_filter
+from filters.standard_filter import get_standard_filter
 
 
 def split_str_to_list(string=' ', splitter=','):

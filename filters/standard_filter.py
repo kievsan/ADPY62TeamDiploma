@@ -3,7 +3,7 @@
 from datetime import datetime, date
 
 from vk_api.vk_api import VkApiMethod
-from bot_checkers.checker import VkUserChecker  # базовый класс
+from filters.filter import VkUserFilter  # базовый класс
 
 
 def get_standard_filter(search_filter) -> dict:
@@ -87,7 +87,7 @@ def correct_date(date_string: str) -> datetime:
     return bdate
 
 
-class StandardChecker(VkUserChecker):
+class StandardFilter(VkUserFilter):
     """
     Проверяет пользователей на соответствие СТАНДАРТНОМУ фильтру
     СТАНДАРТНЫЙ режим поиска подходящих пользователей всей сети VK
@@ -95,7 +95,7 @@ class StandardChecker(VkUserChecker):
     _skill = 'A matchmaker standard Search Engine'
 
     def __init__(self, client_id: int, api_methods: VkApiMethod, search_filter: dict):
-        super(StandardChecker, self).__init__(client_id, api_methods, search_filter, self._skill)
+        super(StandardFilter, self).__init__(client_id, api_methods, search_filter, self._skill)
 
     def is_advisable_user(self, user: dict) -> bool:
         """
@@ -103,7 +103,7 @@ class StandardChecker(VkUserChecker):
         :param user: полученные из ответа на запрос данные по проверяемому пользователю VK
         :return: результат проверки: прошел/не прошел
         """
-        super(StandardChecker, self).is_advisable_user(user)
+        super(StandardFilter, self).is_advisable_user(user)
         bot_filter: dict = get_standard_filter(self.search_filter)
         if not self.get_control_attr_msg(bot_filter):
             return False
