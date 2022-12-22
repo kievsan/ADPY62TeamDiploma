@@ -160,13 +160,7 @@ class Matchmaker(VkBot):
                 for user in users:
                     if check_user(user):
                         self.menu.service['last_one_found_id'] = user['id']
-                        # last_bot_msg_id = self.menu.service.get('last_bot_msg_id', 0)
-                        # if last_bot_msg_id:
-                        #     self.del_post(last_bot_msg_id)
-                        #     self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
-                        #                   message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                        #                   attachment=get_foto_attachment(user), edit_msg_id=last_bot_msg_id)
-                        # else:
+
                         self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
                                       message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
                                       attachment=get_foto_attachment(user))
@@ -190,8 +184,8 @@ class Matchmaker(VkBot):
                     self.send_msg_use_bot_dialog()
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
                     if msg_id:
-                        self.del_post(del_msg_ids=str(self.event.message['id']))
-                        self.del_post(del_msg_ids=str(msg_id))
+                        # self.del_post(del_msg_ids=str(self.event.message['id']))  # удалить user msg  - не работает
+                        self.del_post(del_msg_ids=str(msg_id))  # удалить msg бота
                     if not get_next_user():
                         self.exit()
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
@@ -199,12 +193,12 @@ class Matchmaker(VkBot):
                     if not get_next_user():
                         self.exit()
                     if msg_id:
-                        self.del_post(del_msg_ids=str(self.event.message['id']))
+                        # self.del_post(del_msg_ids=str(self.event.message['id']))
                         self.del_post(del_msg_ids=str(msg_id))
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=True, rec_date=date.today()))
                     if msg_id:
-                        self.del_post(del_msg_ids=str(self.event.message['id']))
+                        # self.del_post(del_msg_ids=str(self.event.message['id']))
                         self.del_post(del_msg_ids=str(msg_id))
                     if not get_next_user():
                         self.exit()
