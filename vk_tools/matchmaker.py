@@ -100,8 +100,6 @@ class Matchmaker(VkBot):
         """
         menu = self.menu.services
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
-        print('Matchmaker.works_search_team line-103:', end='\n\t')
-        pprint(self.event)  # ----------------------------
 
         def check_user(user: dict) -> bool:
             """
@@ -162,15 +160,16 @@ class Matchmaker(VkBot):
                 for user in users:
                     if check_user(user):
                         self.menu.service['last_one_found_id'] = user['id']
-                        last_bot_msg_id = self.menu.service['last_bot_msg_id']
-                        if last_bot_msg_id:
-                            self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
-                                          message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                                          attachment=get_foto_attachment(user), edit_msg_id=last_bot_msg_id)
-                        else:
-                            self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
-                                          message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                                          attachment=get_foto_attachment(user))
+                        # last_bot_msg_id = self.menu.service.get('last_bot_msg_id', 0)
+                        # if last_bot_msg_id:
+                        #     self.del_post(last_bot_msg_id)
+                        #     self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
+                        #                   message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
+                        #                   attachment=get_foto_attachment(user), edit_msg_id=last_bot_msg_id)
+                        # else:
+                        self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
+                                      message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
+                                      attachment=get_foto_attachment(user))
                         return user
                 last_id += requests_step
                 number_block += 1
@@ -178,10 +177,11 @@ class Matchmaker(VkBot):
                     self.send_msg(message='Терпение! Идёт поиск подходящих пиплов...')
 
             ###
-        msg_id = 0
+
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             msg_id = self.event.message.get('id', 0)
             self.print_message_description(msg_id)
+            msg_id = self.menu.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             user_id = self.menu.service['last_one_found_id']
             # Oтветы:
@@ -189,22 +189,25 @@ class Matchmaker(VkBot):
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
+                    if msg_id:
+                        self.del_post(del_msg_ids=str(self.event.message['id']))
+                        self.del_post(del_msg_ids=str(msg_id))
                     if not get_next_user():
                         self.exit()
-                    if self.menu.service.get('last_bot_msg_id', ''):
-                        self.del_post(msg_id)
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=False, rec_date=date.today()))
                     if not get_next_user():
                         self.exit()
-                    if self.menu.service.get('last_bot_msg_id', ''):
-                        self.del_post(msg_id)
+                    if msg_id:
+                        self.del_post(del_msg_ids=str(self.event.message['id']))
+                        self.del_post(del_msg_ids=str(msg_id))
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=True, rec_date=date.today()))
+                    if msg_id:
+                        self.del_post(del_msg_ids=str(self.event.message['id']))
+                        self.del_post(del_msg_ids=str(msg_id))
                     if not get_next_user():
                         self.exit()
-                    if self.menu.service.get('last_bot_msg_id', ''):
-                        self.del_post(msg_id)
                 elif self.exit():
                     db_close()
 

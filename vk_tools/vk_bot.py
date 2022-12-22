@@ -90,8 +90,6 @@ class VkBot:
             try:
                 for event in self.longpoll.listen():
                     self.event = event
-                    print('VkBot.start line-93:', end='\n\t')
-                    pprint(self.event)  # ----------------------------
                     if self.menu.service_name == 'start-up':
                         self.start_mode_events()
                     elif self.menu.service_name == 'matchmaker':
@@ -381,15 +379,15 @@ class VkBot:
         except vk_api.exceptions.ApiError as no_permission:
             print(f'\t{no_permission}')
 
-    def del_post(self, del_msg_id: int):
-        res = {}
+    def del_post(self, del_msg_ids: str):
+        res_ = {}
         try:
-            res = self.vk_session.method('messages.delete', {'message_ids': str(del_msg_id), 'delete_for_all': 1})
-            pprint(res)
+            res = self.vk_api_methods.messages.delete(message_ids=del_msg_ids, delete_for_all=1)
+            # res = self.vk_session.method('messages.delete', {'message_ids': del_msg_ids, 'delete_for_all': 1})
+            res_ = sum(res.get(msg_id, 0) for msg_id in res)
+            print(f'\tУдалены сообщения {del_msg_ids}' if (res_ == len(res)) else '')
         except vk_api.exceptions.ApiError as no_permission:
             print(f'\t{no_permission}')
-        res_ = sum(res.get(msg_id, 0) for msg_id in res)
-        print(f'\tУдалено сообщение {del_msg_id}' if (res_ == len(res)) else '')
         return res_
 
     def send_msg_use_bot_dialog(self):
@@ -399,7 +397,9 @@ class VkBot:
 
     def print_message_description(self, msg_id=0):
         msg_id = str(msg_id) if msg_id else ''
-        msg = f'\nНовое сообщение {msg_id}\t{self.event.t}:'
+        msg = f'\nНовое сообщение'
+        msg += f' {msg_id}' if msg_id else ''
+        msg += f'\t{self.event.t}:'
         msg += f'из чата {self.event.chat_id}' if self.event.from_chat else ''
         msg += f'\nот: {self.get_user_title()}'
         msg += f' *--- {self.event.message["text"]}'
