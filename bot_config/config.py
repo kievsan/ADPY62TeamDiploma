@@ -265,6 +265,7 @@ def get_bot_menu_config_json():
                                         'description': 'Рекомендуем',
                                         'max_buttons_peer_line': '2',
                                         'last_one_found_id': 0,
+                                        'last_bot_msg_id': '',
                                         'services': {
                                             'save': {
                                                 'button': 'Нравится',

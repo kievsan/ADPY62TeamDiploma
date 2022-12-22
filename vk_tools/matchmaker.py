@@ -59,10 +59,12 @@ class Matchmaker(VkBot):
         if not old_client:
             print(f'Новый клиент {client_id}!')
             self.db.add(VKinder(vk_id=client_id, first_visit_date=date.today()))
+
         self.chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
         ban = self.chosen_vk_users.filter(VkIdol.ban)
         self.add_filter(LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
                                              ban_ids=list(ban_user.vk_idol_id for ban_user in ban)))
+
         #        ----------  Стандартный поиск  -----------
         bot_filter: dict = get_standard_filter(search_filter=search_filter)
         print('\n------ {}:\t'.format(search_filter['standard']['description'].strip().upper()), end='')
@@ -87,23 +89,25 @@ class Matchmaker(VkBot):
     def works_search_team(self, requests_block=10, requests_step=1):  # search_advisable_mode_events
         """
         Поиск (прогон по фильтрам), просмотр и выбор подходящих и забаненных пользователей
-        :param requests_block: кол-во пользователей в api-запросах
-        :param requests_step: шаг проверяемых в блоке api-запроса
-        :return: user (из полученного json)
+        :param requests_block:  кол-во пользователей в api-запросах
+        :param requests_step:   шаг проверяемых в блоке api-запроса
+        :return:                user (из полученного json)
         :def
-        :check_user(user: dict) -> bool:
-        :db_close():
-        :get_foto_attachment(user: dict):
-        :get_next_user() -> dict:
+        :check_user(user: dict) -> bool:    Работа фмльтров (подходит ли пользователь по выбранным условиям)
+        :db_close():                        Сохранение в базу и закрытие текущей локальной сессии
+        :get_foto_attachment(user: dict):   Получение фото и прикрепление её к сообщению
+        :get_next_user() -> dict:           Возвращает следующего подходящего пользователя VK, или прекращает поиск
         """
         menu = self.menu.services
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
+        print('Matchmaker.works_search_team line-103:', end='\n\t')
+        pprint(self.event)  # ----------------------------
 
         def check_user(user: dict) -> bool:
             """
             Работа фмльтров (подходит ли пользователь по выбранным условиям)
             :param user: из json
-            :return:
+            :return:    True, если подходит по всем условиям
             """
             for filter_ in self.filters:
                 if not filter_.is_advisable_user(user):
@@ -142,7 +146,7 @@ class Matchmaker(VkBot):
 
         def get_next_user() -> dict:
             """
-            Операция "Следующий"
+            Возвращает следующего подходящего пользователя VK, или выходит из текущего режима
             :return: user (из полученного json)
             """
             last_id = self.menu.service['last_one_found_id']
@@ -158,18 +162,26 @@ class Matchmaker(VkBot):
                 for user in users:
                     if check_user(user):
                         self.menu.service['last_one_found_id'] = user['id']
-                        self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
-                                      message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                                      attachment=get_foto_attachment(user))
+                        last_bot_msg_id = self.menu.service['last_bot_msg_id']
+                        if last_bot_msg_id:
+                            self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
+                                          message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
+                                          attachment=get_foto_attachment(user), edit_msg_id=last_bot_msg_id)
+                        else:
+                            self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
+                                          message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
+                                          attachment=get_foto_attachment(user))
                         return user
                 last_id += requests_step
                 number_block += 1
                 if number_block % 20 == 0:
                     self.send_msg(message='Терпение! Идёт поиск подходящих пиплов...')
-            ###
 
+            ###
+        msg_id = 0
         if self.event.type == VkBotEventType.MESSAGE_NEW:
-            self.print_message_description()
+            msg_id = self.event.message.get('id', 0)
+            self.print_message_description(msg_id)
             text = self.event.message['text'].lower()
             user_id = self.menu.service['last_one_found_id']
             # Oтветы:
@@ -179,16 +191,23 @@ class Matchmaker(VkBot):
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
                     if not get_next_user():
                         self.exit()
+                    if self.menu.service.get('last_bot_msg_id', ''):
+                        self.del_post(msg_id)
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=False, rec_date=date.today()))
                     if not get_next_user():
                         self.exit()
+                    if self.menu.service.get('last_bot_msg_id', ''):
+                        self.del_post(msg_id)
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=self.client_id, ban=True, rec_date=date.today()))
                     if not get_next_user():
                         self.exit()
+                    if self.menu.service.get('last_bot_msg_id', ''):
+                        self.del_post(msg_id)
                 elif self.exit():
                     db_close()
+
                 else:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
@@ -199,3 +218,11 @@ class Matchmaker(VkBot):
             except Exception as other:
                 self.my_except(other)
                 raise other
+
+        elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+            msg_id = self.event.obj.get('id', 0)
+            text = self.event.obj['text'].lower()
+            if 'нашли' in text:
+                self.menu.service['last_bot_msg_id'] = msg_id
+                print(f"\nСообщение-{self.event.obj['id']} "
+                      f"от бота для {self.event.obj.peer_id}")

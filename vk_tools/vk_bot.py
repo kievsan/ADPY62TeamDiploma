@@ -52,7 +52,7 @@ class VkBot:
         self.vk_session = vk_api.VkApi(token=self._BOT_CONFIG['token'])  # vk_api.vk_api.VkApi
         self.vk_upload = VkUpload(self.vk_session)
         self.longpoll = VkBotLongPoll(self.vk_session, group_id=self.group_id)
-        self.event: VkBotMessageEvent = None
+        self.event: VkBotMessageEvent = {}
         self.vk_tools = vk_api.VkTools(self.vk_session)  # vk_api.tools.VkTools
         self.vk_api_methods = self.vk_session.get_api()  # vk_api.vk_api.VkApiMethod
         print(f"Создан объект бота! (id={self.vk_session.app_id})")
@@ -90,6 +90,8 @@ class VkBot:
             try:
                 for event in self.longpoll.listen():
                     self.event = event
+                    print('VkBot.start line-93:', end='\n\t')
+                    pprint(self.event)  # ----------------------------
                     if self.menu.service_name == 'start-up':
                         self.start_mode_events()
                     elif self.menu.service_name == 'matchmaker':
@@ -260,6 +262,7 @@ class VkBot:
         farewells = split_str_to_list(self._BOT_CONFIG['farewells'])
         # if event.type == VkEventType.MESSAGE_NEW and event.to_me:
         if self.event.type == VkBotEventType.MESSAGE_NEW:
+            # pprint(self.event)  # -------------------------------------------- self.event['object']['message']['id']
             self.print_message_description()
             # text = event.text.lower()
             text = self.event.message['text'].lower()
@@ -340,6 +343,8 @@ class VkBot:
         # text = event.text.lower()
         text = self.event.message['text'].lower()
         if text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+            if self.menu.service.get('last_bot_msg_id', ''):
+                self.menu.service['last_bot_msg_id'] = ''
             message = '{},\nсервис "{}" закрыт!'.format(self.get_user_name(), self.menu.button)
             self.menu.exit()
             self.start_mode(message=message, callback=callback)
@@ -356,29 +361,45 @@ class VkBot:
         print(message)
         return post
 
-    def send_msg(self, peer_id='', message='', keyboard=None, attachment=''):
+    def send_msg(self, peer_id='', message='', keyboard=None, attachment='', edit_msg_id=0):
         """" Получает id пользователя ВК <user_id>, и сообщение ему """
         if not peer_id:
             peer_id = self.event.message["peer_id"]
         post = {'peer_id': peer_id, 'random_id': get_random_id(), 'message': message, 'attachment': attachment}
         if keyboard:
             post['keyboard'] = keyboard  # .get_keyboard()
-        self.send_post(post)
+        self.send_post(post, edit_msg_id)
         return post
 
-    def send_post(self, post):
+    def send_post(self, post, edit_msg_id=0):
         try:
-            self.vk_session.method('messages.send', post)
+            if edit_msg_id:
+                post['message_id'] = edit_msg_id
+                self.vk_session.method('messages.edit', post)
+            else:
+                self.vk_session.method('messages.send', post)
         except vk_api.exceptions.ApiError as no_permission:
             print(f'\t{no_permission}')
+
+    def del_post(self, del_msg_id: int):
+        res = {}
+        try:
+            res = self.vk_session.method('messages.delete', {'message_ids': str(del_msg_id), 'delete_for_all': 1})
+            pprint(res)
+        except vk_api.exceptions.ApiError as no_permission:
+            print(f'\t{no_permission}')
+        res_ = sum(res.get(msg_id, 0) for msg_id in res)
+        print(f'\tУдалено сообщение {del_msg_id}' if (res_ == len(res)) else '')
+        return res_
 
     def send_msg_use_bot_dialog(self):
         if not self.event.from_user:
             self.send_msg(message='{} Юзать сервис переходи в чат с @{}!'.format(
                 f'{self.get_user_name()}!\n', self._BOT_CONFIG["name"]))
 
-    def print_message_description(self):
-        msg = f'\nНовое сообщение\t{self.event.t}:'
+    def print_message_description(self, msg_id=0):
+        msg_id = str(msg_id) if msg_id else ''
+        msg = f'\nНовое сообщение {msg_id}\t{self.event.t}:'
         msg += f'из чата {self.event.chat_id}' if self.event.from_chat else ''
         msg += f'\nот: {self.get_user_title()}'
         msg += f' *--- {self.event.message["text"]}'
