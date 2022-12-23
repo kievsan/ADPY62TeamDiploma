@@ -347,8 +347,6 @@ class VkBot:
         # text = event.text.lower()
         text = self.event.message['text'].lower()
         if text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
-            if menu_.service.get('last_bot_msg_id', ''):
-                menu_.service['last_bot_msg_id'] = ''
             message = '{},\nсервис "{}" закрыт!'.format(self.get_user_name(), menu_.button)
             menu_.exit()
             self.start_mode(message=message, callback=callback)
@@ -415,17 +413,17 @@ class VkBot:
         return msg
 
     def current(self):
-        peer_id = self.get_str_peer_id()
+        peer_id_, peer_id = self.get_event_peer_id()
         if not peer_id:
             return {}
         if peer_id not in self.conversations:
-            self.conversations[peer_id] = {'menu': VkBotMenu(),
-                                  'msg': self.get_event_msg()}
+            self.conversations[peer_id] = {
+                'vk_id': peer_id_,
+                'menu': VkBotMenu(),
+                'filters': [],
+                'msg': self.get_event_msg()
+            }
         return self.conversations.get(peer_id, {})
-
-    def get_str_peer_id(self):
-        peer_id = self.get_event_peer_id()
-        return str(peer_id) if peer_id else ''
 
     def get_event_peer_id(self):
         peer_id = 0
@@ -434,7 +432,7 @@ class VkBot:
                 peer_id = self.event.message['peer_id']
             elif self.event.type == VkBotEventType.MESSAGE_REPLY:
                 peer_id = self.event.obj.peer_id
-        return peer_id
+        return peer_id, str(peer_id) if peer_id else ''
 
     def get_event_msg(self):
         msg = {}

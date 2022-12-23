@@ -29,8 +29,6 @@ class Matchmaker(VkBot):
         self.engine = sqlalchemy.create_engine(self.get_DSN())  # <class 'sqlalchemy.engine.base.Engine'>
         self.SessionLocal = sessionmaker(bind=self.engine)  # <class 'sqlalchemy.orm.session.sessionmaker'>
         self.db: Session = None
-        self.filters = []
-        self.chosen_vk_users = None
         if bool(self._DB_CONFIG['overwrite']):
             orm.drop_tables(self.engine)
         orm.create_tables(self.engine)
@@ -41,8 +39,9 @@ class Matchmaker(VkBot):
         return 'postgresql://{}:{}@{}/{}'.format(db["login"], db["password"], db["server"], db["dbase name"])
 
     def add_filter(self, checker: object) -> list:
-        self.filters.append(checker)
-        return self.filters
+        filters: list = self.current()['filters']
+        filters.append(checker)
+        return filters
 
     def start_search_team(self, client_id: int, search_filter: dict):  # search_advisable_users
         """
@@ -60,9 +59,9 @@ class Matchmaker(VkBot):
             print(f'Новый клиент {client_id}!')
             self.db.add(VKinder(vk_id=client_id, first_visit_date=date.today()))
 
-        self.chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
-        ban = self.chosen_vk_users.filter(VkIdol.ban)
-        is_free = LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
+        chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
+        ban = chosen_vk_users.filter(VkIdol.ban)
+        is_free = LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in chosen_vk_users),
                                        ban_ids=list(ban_user.vk_idol_id for ban_user in ban),
                                        client_id=client_id)
         self.add_filter(is_free)
@@ -106,7 +105,8 @@ class Matchmaker(VkBot):
 
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
-        client_id = self.get_event_peer_id()
+        # client_id = self.get_event_peer_id()
+        client_id = self.current()['vk_id']
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
 
         def check_user(user: dict) -> bool:
@@ -115,10 +115,17 @@ class Matchmaker(VkBot):
             :param user: из json
             :return:    True, если подходит по всем условиям
             """
-            for filter_ in self.filters:
+            filters: list = self.current()['filters']
+            for filter_ in filters:
                 if not filter_.is_advisable_user(user):
                     return False
             return True
+
+        def exit_from_search_team():
+            self.current()['filters'] = []
+            db_close()
+            if menu_.service.get('last_bot_msg_id', ''):
+                menu_.service['last_bot_msg_id'] = ''
 
         def db_close():
             """
@@ -164,6 +171,7 @@ class Matchmaker(VkBot):
                 users = self.vk_api_methods.users.get(user_ids=next_id_block, fields=api_fields)
                 if not users:
                     print('\tПоздравляем, ты всех перебрал, кто подходил под твои условия!')
+                    self.current()['filters'] = []
                     db_close()
                     return {}
                 for user in users:
@@ -202,10 +210,12 @@ class Matchmaker(VkBot):
                         # self.del_post(del_msg_ids=str(self.event.message['id']))  # удалить user msg  - не работает
                         self.del_post(del_msg_ids=str(msg_id))  # удалить msg бота
                     if not get_next_user():
+                        exit_from_search_team()
                         self.exit()
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=client_id, ban=False, rec_date=date.today()))
                     if not get_next_user():
+                        exit_from_search_team()
                         self.exit()
                     if msg_id:
                         # self.del_post(del_msg_ids=str(self.event.message['id']))
@@ -216,9 +226,10 @@ class Matchmaker(VkBot):
                         # self.del_post(del_msg_ids=str(self.event.message['id']))
                         self.del_post(del_msg_ids=str(msg_id))
                     if not get_next_user():
+                        exit_from_search_team()
                         self.exit()
                 elif self.exit():
-                    db_close()
+                    exit_from_search_team()
 
                 else:
                     if not self.event.from_chat:

@@ -35,7 +35,8 @@ class VkUserFilter(ABC):
             user['id'], user.get('first_name', ''), user.get('last_name', ''),
             ['', 'жен', 'муж'][int(user.get('sex', ''))] if user.get('sex', '') else '',
             user.get('bdate', ''),
-            user.get('city', '')['title'] if user.get('city', '') else '')
+            user.get('city', '')['title'] if user.get('city', '') else ''
+        ) if user else ''
 
     @abstractmethod
     def is_advisable_user(self, user: dict) -> bool:
