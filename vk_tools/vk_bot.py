@@ -48,7 +48,7 @@ class VkBot:
     def __init__(self, bot='bot.cfg'):
         self._BOT_CONFIG: dict = get_config()
         self.group_id = self._BOT_CONFIG['group_id']
-        self.menu = VkBotMenu()
+        self.conv = {}  # conversations
         self.vk_session = vk_api.VkApi(token=self._BOT_CONFIG['token'])  # vk_api.vk_api.VkApi
         self.vk_upload = VkUpload(self.vk_session)
         self.longpoll = VkBotLongPoll(self.vk_session, group_id=self.group_id)
@@ -61,7 +61,7 @@ class VkBot:
         keyboard = VkKeyboard(inline=inline, one_time=False if inline else one_time)
         if empty:
             return keyboard.get_empty_keyboard()
-        buttons = self.menu.get_buttons()
+        buttons = self.current()['menu'].get_buttons()
         buttons_peer_line = 0
         for num, button in enumerate(buttons['buttons']):
             if num and buttons['max'] and num % buttons['max'] == 0:
@@ -90,17 +90,18 @@ class VkBot:
             try:
                 for event in self.longpoll.listen():
                     self.event = event
-                    if self.menu.service_name == 'start-up':
+                    menu = self.current()['menu'].service_name
+                    if menu == 'start-up':
                         self.start_mode_events()
-                    elif self.menu.service_name == 'matchmaker':
+                    elif menu == 'matchmaker':
                         self.matchmaker_mode_events()
-                    elif self.menu.service_name == 'search':
+                    elif menu == 'search':
                         self.search_mode_events()
-                    elif self.menu.service_name == 'filter':
+                    elif menu == 'filter':
                         self.search_filter_mode_events()
-                    elif self.menu.service_name == 'standard':
+                    elif menu == 'standard':
                         self.search_standard_filter_mode_events()
-                    elif self.menu.service_name == 'advisable':
+                    elif menu == 'advisable':
                         self.works_search_team()
                     else:
                         self.start_mode_events()
@@ -108,7 +109,8 @@ class VkBot:
                 continue
 
     def search_standard_filter_mode_events(self):
-        menu = self.menu.services
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
             text = self.event.message['text'].lower()
@@ -140,7 +142,7 @@ class VkBot:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
                 msg = self.send_filter(message='Настроен Фильтр для поиска\t'
-                                       )['message'] if self.menu.get_filter_string() else ''
+                                       )['message'] if menu_.get_filter_string() else ''
             except KeyError as key_err:
                 self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
                                         f' в search_standard_filter_mode_events', menu)
@@ -158,7 +160,8 @@ class VkBot:
         self.exit()
 
     def search_filter_mode_events(self):
-        menu = self.menu.services
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
             text = self.event.message['text'].lower()
@@ -167,7 +170,7 @@ class VkBot:
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['standard']['command'].lower() or text == menu['standard']['button'].lower():
-                    self.menu.switch('standard')
+                    menu_.switch('standard')
                     self.start_mode(message='Ok,\n{}!'.format(self.get_user_name()))
                 elif text == menu['interests']['command'].lower() or text == menu['interests']['button'].lower():
                     self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
@@ -175,7 +178,7 @@ class VkBot:
                     self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
                 elif self.exit():
                     std_filter = get_standard_filter(menu)['buttons']
-                    print('{}:\t{}'.format(self.menu.button,
+                    print('{}:\t{}'.format(menu_.button,
                                            std_filter if std_filter else 'Стандартный фильтр не задан...'))
                 else:
                     if not self.event.from_chat:
@@ -187,8 +190,9 @@ class VkBot:
                 raise other
 
     def search_mode_events(self):
-        menu = self.menu.services
-        self.menu.get_filter_string()
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
+        # menu_.get_filter_string()
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
             text = self.event.message['text'].lower()
@@ -197,12 +201,12 @@ class VkBot:
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['filter']['command'].lower() or text == menu['filter']['button'].lower():
-                    self.menu.switch('filter')
+                    menu_.switch('filter')
                     self.start_mode(message='...And hello again,\n{}!'.format(self.get_user_name()))
                 elif text == menu['advisable']['command'].lower() or text == menu['advisable']['button'].lower():
                     search_filter = menu['filter']['services']
                     std_filter = get_standard_filter(search_filter)['buttons']
-                    self.menu.switch('advisable')
+                    menu_.switch('advisable')
                     self.start_mode(clear_keyboard=True,
                                     message='...And hello again,\n{}!\nИщем по фильтрам\n{}.\t'.format(
                                         self.get_user_name(),
@@ -228,7 +232,8 @@ class VkBot:
         print('Модуль в разработке!')
 
     def matchmaker_mode_events(self):
-        menu = self.menu.services
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
             text = self.event.message['text'].lower()
@@ -237,7 +242,7 @@ class VkBot:
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['search']['command'].lower() or text == menu['search']['button'].lower():
-                    self.menu.switch('search')
+                    menu_.switch('search')
                     self.start_mode(message='...Together forever,\n{}!'.format(self.get_user_name()))
                 elif text == menu['print']['command'].lower() or text == menu['print']['button'].lower():
                     self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
@@ -255,14 +260,12 @@ class VkBot:
                 # raise other
 
     def start_mode_events(self):
-        menu = self.menu.services
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
         greetings = split_str_to_list(self._BOT_CONFIG['greetings'])
         farewells = split_str_to_list(self._BOT_CONFIG['farewells'])
-        # if event.type == VkEventType.MESSAGE_NEW and event.to_me:
         if self.event.type == VkBotEventType.MESSAGE_NEW:
-            # pprint(self.event)  # -------------------------------------------- self.event['object']['message']['id']
             self.print_message_description()
-            # text = event.text.lower()
             text = self.event.message['text'].lower()
             # Oтветы:
             if text:
@@ -280,7 +283,7 @@ class VkBot:
                         farewell = farewells[randrange(len(farewells))]
                         self.send_msg(message=f'{farewell.upper()},\n{self.get_user_name()}!\n :))')
                     elif text == menu['matchmaker']['command'].lower() or text == menu['matchmaker']['button'].lower():
-                        self.menu.switch('matchmaker')
+                        menu_.switch('matchmaker')
                         self.start_mode(message='Спасибо за компанию,\n{}!'.format(self.get_user_name()))
                         self.send_msg_use_bot_dialog()
                     else:
@@ -327,32 +330,35 @@ class VkBot:
             print()
 
     def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
+        menu_: VkBotMenu = self.current()['menu']
         if not peer_id:
             peer_id = self.event.message["peer_id"]
         post = {'peer_id': peer_id, 'random_id': get_random_id(),
-                'message': message if self.event.from_chat else f'{message} Текущий{self.menu}'}
+                'message': message if self.event.from_chat else f'{message} Текущий{menu_}'}
         if not self.event.from_chat:
             post['keyboard'] = self.get_keyboard(inline=inline, callback=callback, empty=clear_keyboard)
         self.send_post(post)
         return post
 
     def exit(self, callback=False) -> bool:
-        menu = self.menu.services
+        menu_: VkBotMenu = self.current()['menu']
+        menu = menu_.services
         # text = event.text.lower()
         text = self.event.message['text'].lower()
         if text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
-            if self.menu.service.get('last_bot_msg_id', ''):
-                self.menu.service['last_bot_msg_id'] = ''
-            message = '{},\nсервис "{}" закрыт!'.format(self.get_user_name(), self.menu.button)
-            self.menu.exit()
+            if menu_.service.get('last_bot_msg_id', ''):
+                menu_.service['last_bot_msg_id'] = ''
+            message = '{},\nсервис "{}" закрыт!'.format(self.get_user_name(), menu_.button)
+            menu_.exit()
             self.start_mode(message=message, callback=callback)
             return True
         return False
 
     def send_filter(self, message=''):
         """" Сообщение пользователю о выбранных фильтрах стандартного поиска подходящих пиплов """
-        std_filter = self.menu.get_filter_string()
-        message += '\n{}:\t{}'.format(self.menu.button, std_filter if std_filter else 'фильтр не задан...')
+        menu_: VkBotMenu = self.current()['menu']
+        std_filter = menu_.get_filter_string()
+        message += '\n{}:\t{}'.format(menu_.button, std_filter if std_filter else 'фильтр не задан...')
         post = {'peer_id': self.event.message["peer_id"], 'random_id': get_random_id(), 'message': message,
                 'keyboard': self.get_keyboard()}
         self.send_post(post)
@@ -405,6 +411,45 @@ class VkBot:
         msg += f' *--- {self.event.message["text"]}'
         print(msg)
         # print('*---', event.from_user, event.from_chat, event.from_group, event.from_me)
+        return msg
+
+    def current(self):
+        peer_id = self.get_str_peer_id()
+        if not peer_id:
+            return {}
+        if peer_id not in self.conv:
+            self.conv[peer_id] = {'menu': VkBotMenu(),
+                                  'msg': self.get_event_msg()}
+        return self.conv.get(peer_id, {})
+
+    def get_str_peer_id(self):
+        peer_id = self.get_event_peer_id()
+        return str(peer_id) if peer_id else ''
+
+    def get_event_peer_id(self):
+        peer_id = 0
+        if self.event:
+            if self.event.type == VkBotEventType.MESSAGE_NEW:
+                peer_id = self.event.message['peer_id']
+            elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+                peer_id = self.event.obj.peer_id
+        return peer_id
+
+    def get_event_msg(self):
+        msg = {}
+        if self.event:
+            if self.event.type == VkBotEventType.MESSAGE_NEW:
+                msg = {'type': self.event.t,
+                       'from_id': self.event.message['from_id'],
+                       'mid': self.event.message['id'],
+                       'cmid': self.event.message['conversation_message_id'],
+                       'text': self.event.message['text'].lower()}
+            elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+                msg = {'type': self.event.t,
+                       'from_id': self.event.obj['from_id'],
+                       'mid': self.event.obj['id'],
+                       'cmid': self.event.obj['conversation_message_id'],
+                       'text': self.event.obj['text'].lower()}
         return msg
 
     def get_user(self, user_id='', name_case='nom', fields="city"):

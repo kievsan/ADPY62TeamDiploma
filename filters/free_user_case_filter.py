@@ -11,13 +11,14 @@ class LegitimacyUserFilter:
     """
     _skill = 'Checking the validity of new users'
 
-    def __init__(self, user_ids: list = [], ban_ids: list = []):
+    def __init__(self, client_id: int, user_ids: list = [], ban_ids: list = []):
         self.user_ids = user_ids
         self.ban_ids = ban_ids
+        self.client_id = client_id
 
     def is_advisable_user(self, user: dict) -> bool:
         user_id = user['id']
-        print(f'\nid={user_id}, users={list(self.user_ids)}, ban={list(self.ban_ids)}')
+        print(f'\nid={user_id} (client-{self.client_id}), users={list(self.user_ids)}, ban={list(self.ban_ids)}')
         if user_id in self.user_ids:
             print(f'\t\tuser{user_id} НЕ ПРОШЁЛ:', end=' ')
             print(f'забанен клиентом!' if user_id in self.ban_ids

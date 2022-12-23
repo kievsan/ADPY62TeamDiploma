@@ -36,7 +36,8 @@ class VkIdol(Base):
     __tablename__ = model_check('VKIdol', 'VKIdol users table')  # 'vk_idols'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    vk_idol_id = Column(Integer, unique=True, nullable=False, index=True)
+    # vk_idol_id = Column(Integer, unique=True, nullable=False, index=True)
+    vk_idol_id = Column(Integer, nullable=False, index=True)
     vk_id = Column(Integer, ForeignKey('vkinders.vk_id'), primary_key=True)
     ban = Column(Boolean, nullable=False)
     rec_date = Column(Date, nullable=False)
