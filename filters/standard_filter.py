@@ -49,7 +49,7 @@ def correct_date(date_string: str) -> datetime:
     :param date_string:
     :return: bdate: откорректированная дата
     """
-    null_date = datetime.strptime('1.1.1000', "%d.%m.%Y")
+    null_date = datetime.strptime('1.1.1004', "%d.%m.%Y")
     if not date_string.strip():
         return null_date
     try:
@@ -71,15 +71,15 @@ def correct_date(date_string: str) -> datetime:
             elif not (0 < int(date_list[1]) < 13):
                 date_list[1] = '1'
         else:
-            date_list.append('1000')
+            date_list.append('1004')
         if l > 2:
             if date_list[2].isdigit():
                 if not (1000 < int(date_list[2]) <= date.today().year):
-                    date_list[2] = '1000'
+                    date_list[2] = '1004'
             else:
-                date_list[2] = '1000'
+                date_list[2] = '1004'
         else:
-            date_list.append('1000')
+            date_list.append('1004')
         return datetime.strptime('.'.join(date_list), "%d.%m.%Y")
     except Exception as other:
         print('\tОшибка обработки даты!', other)
