@@ -15,10 +15,12 @@ class LegitimacyUserFilter:
         self.user_ids = user_ids
         self.ban_ids = ban_ids
         self.client_id = client_id
+        self.user = {}
 
     def is_advisable_user(self, user: dict) -> bool:
+        self.user = user
         user_id = user['id']
-        print(f'\nid={user_id} (client-{self.client_id}), users={list(self.user_ids)}, ban={list(self.ban_ids)}')
+        print(self)
         if user_id in self.user_ids:
             print(f'\t\tuser{user_id} НЕ ПРОШЁЛ:', end=' ')
             print(f'забанен клиентом!' if user_id in self.ban_ids
@@ -26,3 +28,7 @@ class LegitimacyUserFilter:
             return False
         print('\t\tПРОШЁЛ: еще нет в списке избранных!')
         return True
+
+    def __str__(self):
+        return f'\nid={self.user.get("id", "")} (client-{self.client_id}), ' \
+               f'users={list(self.user_ids)}, ban={list(self.ban_ids)})'

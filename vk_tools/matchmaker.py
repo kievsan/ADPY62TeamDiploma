@@ -30,7 +30,6 @@ class Matchmaker(VkBot):
         self.SessionLocal = sessionmaker(bind=self.engine)  # <class 'sqlalchemy.orm.session.sessionmaker'>
         self.db: Session = None
         self.filters = []
-        # self.client_id = None
         self.chosen_vk_users = None
         if bool(self._DB_CONFIG['overwrite']):
             orm.drop_tables(self.engine)
@@ -53,7 +52,6 @@ class Matchmaker(VkBot):
         :return:
         """
         menu_: VkBotMenu = self.current()['menu']
-        client_id = self.get_event_peer_id()
 
         if not self.db:
             self.db = self.SessionLocal()
@@ -64,17 +62,21 @@ class Matchmaker(VkBot):
 
         self.chosen_vk_users = self.db.query(VkIdol).filter(VkIdol.vk_id == client_id)
         ban = self.chosen_vk_users.filter(VkIdol.ban)
-        self.add_filter(LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
-                                             ban_ids=list(ban_user.vk_idol_id for ban_user in ban),
-                                             client_id=client_id))
+        is_free = LegitimacyUserFilter(user_ids=list(user.vk_idol_id for user in self.chosen_vk_users),
+                                       ban_ids=list(ban_user.vk_idol_id for ban_user in ban),
+                                       client_id=client_id)
+        self.add_filter(is_free)
+        print(is_free)
 
         #        ----------  Стандартный поиск  -----------
         bot_filter: dict = get_standard_filter(search_filter=search_filter)
         print('\n------ {}:\t'.format(search_filter['standard']['description'].strip().upper()), end='')
         if bot_filter['buttons']:
             print(bot_filter['buttons'])
-            self.add_filter(StandardFilter(client_id=client_id, search_filter=search_filter,
-                                           api_methods=self.vk_api_methods))
+            is_standard = StandardFilter(client_id=client_id, search_filter=search_filter,
+                                         api_methods=self.vk_api_methods)
+            self.add_filter(is_standard)
+            print(is_standard)
         else:
             print('Стандартный фильтр не задан...')
 

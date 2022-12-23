@@ -48,7 +48,7 @@ class VkBot:
     def __init__(self, bot='bot.cfg'):
         self._BOT_CONFIG: dict = get_config()
         self.group_id = self._BOT_CONFIG['group_id']
-        self.conv = {}  # conversations
+        self.conversations = {}
         self.vk_session = vk_api.VkApi(token=self._BOT_CONFIG['token'])  # vk_api.vk_api.VkApi
         self.vk_upload = VkUpload(self.vk_session)
         self.longpoll = VkBotLongPoll(self.vk_session, group_id=self.group_id)
@@ -221,6 +221,7 @@ class VkBot:
                         self.start_mode(message='Не понимаю...')
             except KeyError as key_err:
                 self.my_except(key_err, f'Попытка взять значение по ошибочному-2 ключу {key_err}', menu)
+                raise key_err
             except Exception as other:
                 self.my_except(other)
                 raise other
@@ -417,10 +418,10 @@ class VkBot:
         peer_id = self.get_str_peer_id()
         if not peer_id:
             return {}
-        if peer_id not in self.conv:
-            self.conv[peer_id] = {'menu': VkBotMenu(),
+        if peer_id not in self.conversations:
+            self.conversations[peer_id] = {'menu': VkBotMenu(),
                                   'msg': self.get_event_msg()}
-        return self.conv.get(peer_id, {})
+        return self.conversations.get(peer_id, {})
 
     def get_str_peer_id(self):
         peer_id = self.get_event_peer_id()
