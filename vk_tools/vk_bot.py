@@ -259,7 +259,6 @@ class VkBot:
                       f"от бота для {current['peer_id']}:\n\t{current['msg']['text']}")
             else:
                 print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
-                # pprint(current)
 
     def start_search_team(self, client_id, search_filter):
         print('Модуль в разработке!')
@@ -300,14 +299,6 @@ class VkBot:
                 self.my_except(other)
                 # raise other
 
-        # elif self.event.type == VkBotEventType.MESSAGE_REPLY:
-        #     msg_id = self.event.obj.get('conversation_message_id', 0)
-        #     text = self.event.obj['text'].lower()
-        #     if 'нашли' in text:
-        #         menu_.service['last_bot_msg_id'] = msg_id
-        #         print(f"\nСообщение-{self.event.obj['id']} "
-        #               f"от бота для {self.event.obj.peer_id}:\n\t{self.event.obj['text']}")
-
         elif self.event.type == VkBotEventType.MESSAGE_REPLY:
             current = self.current()
             # if (menu['print']['command'].lower() in current['msg']['text']
@@ -318,7 +309,6 @@ class VkBot:
                       f"от бота для {current['peer_id']}:\n\t{current['msg']['text']}")
             else:
                 print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
-                # pprint(current)
 
     def start_mode_events(self):
         menu_: VkBotMenu = self.current()['menu']
@@ -403,21 +393,6 @@ class VkBot:
             post['keyboard'] = self.get_keyboard(inline=inline, callback=callback, empty=clear_keyboard)
         self.send_post(post)
         return post
-    #
-    # def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
-    #     menu_: VkBotMenu = self.current()['menu']
-    #     if not peer_id:
-    #         peer_id = self.event.message["peer_id"]
-    #     post = {'peer_id': peer_id, 'random_id': get_random_id(),
-    #             'message': message if self.event.from_chat else f'{message} Текущий{menu_}'}
-    #     if not inline:
-    #         self.send_post(post)
-    #     if not self.event.from_chat:
-    #         if not inline:
-    #             post['message'] = ''
-    #         post['keyboard'] = self.get_keyboard(inline=inline, callback=callback, empty=clear_keyboard)
-    #         self.send_post(post)
-    #     return post
 
     def exit(self, inline=False, callback=False) -> bool:
         menu_: VkBotMenu = self.current()['menu']

@@ -176,13 +176,6 @@ class Matchmaker(VkBot):
                 for user in users:
                     if check_user(user):
                         menu_.service['last_one_found_id'] = user['id']
-                        # last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
-                        # if last_bot_msg_id:
-                        #     self.del_post(last_bot_msg_id)
-                        #     self.send_msg(peer_id=self.client_id, keyboard=self.get_keyboard(inline=True),
-                        #                   message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                        #                   attachment=get_foto_attachment(user), edit_msg_id=last_bot_msg_id)
-                        # else:
                         self.send_msg(peer_id=client_id, keyboard=self.get_keyboard(inline=True),
                                       message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
                                       attachment=get_foto_attachment(user))
