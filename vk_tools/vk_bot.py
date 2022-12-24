@@ -90,7 +90,12 @@ class VkBot:
             try:
                 for event in self.longpoll.listen():
                     self.event = event
-                    menu = self.current()['menu'].service_name
+                    current = self.current()
+                    menu = current['menu'].service_name
+                    if current['start']:
+                        self.send_msg(message='Моя прелесть...', keyboard=self.get_keyboard(empty=True))
+                        current['start'] = 0
+
                     if menu == 'start-up':
                         self.start_mode_events()
                     elif menu == 'matchmaker':
@@ -106,6 +111,8 @@ class VkBot:
                     else:
                         self.start_mode_events()
             except requests.exceptions.ReadTimeout as timeout:
+                for conv in self.conversations:
+                    conv['start'] = 1
                 continue
 
     def search_standard_filter_mode_events(self):
@@ -164,6 +171,7 @@ class VkBot:
         menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
+            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             # Oтветы:
             try:
@@ -176,7 +184,10 @@ class VkBot:
                     self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
                 elif text == menu['advanced']['command'].lower() or text == menu['advanced']['button'].lower():
                     self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
-                elif self.exit():
+                elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(str(last_bot_msg_id))
+                    self.send_msg(message='Можно запускать Поиск...', keyboard=self.get_keyboard(empty=True))
+                    self.exit(inline=True)
                     std_filter = get_standard_filter(menu)['buttons']
                     print('{}:\t{}'.format(menu_.button,
                                            std_filter if std_filter else 'Стандартный фильтр не задан...'))
@@ -189,21 +200,34 @@ class VkBot:
                 self.my_except(other)
                 raise other
 
+        elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+            current = self.current()
+            if 'текущий' in current['msg']['text']:
+                menu_.service['last_bot_msg_id'] = current['msg']['id']
+                print(f"\nСообщение-{menu_.service['last_bot_msg_id']} "
+                      f"от бота для {current['peer_id']}:\n\t{current['msg']['text']}")
+            else:
+                print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
+                # pprint(current)
+
     def search_mode_events(self):
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         # menu_.get_filter_string()
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
+            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             # Oтветы:
             try:
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['filter']['command'].lower() or text == menu['filter']['button'].lower():
+                    self.del_post(str(last_bot_msg_id))
                     menu_.switch('filter')
                     self.start_mode(message='...And hello again,\n{}!'.format(self.get_user_name()))
                 elif text == menu['advisable']['command'].lower() or text == menu['advisable']['button'].lower():
+                    self.del_post(str(last_bot_msg_id))
                     search_filter = menu['filter']['services']
                     std_filter = get_standard_filter(search_filter)['buttons']
                     menu_.switch('advisable')
@@ -214,8 +238,9 @@ class VkBot:
                     self.send_msg(message='Терпение! Идёт поиск подходящих пиплов...',
                                   attachment='doc49903553_642595119')
                     self.start_search_team(client_id=self.event.message['from_id'], search_filter=search_filter)
-                elif self.exit():
-                    pass
+                elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(str(last_bot_msg_id))
+                    self.exit(inline=True)
                 else:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
@@ -226,6 +251,16 @@ class VkBot:
                 self.my_except(other)
                 raise other
 
+        elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+            current = self.current()
+            if 'текущий' in current['msg']['text']:
+                menu_.service['last_bot_msg_id'] = current['msg']['id']
+                print(f"\nСообщение-{menu_.service['last_bot_msg_id']} "
+                      f"от бота для {current['peer_id']}:\n\t{current['msg']['text']}")
+            else:
+                print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
+                # pprint(current)
+
     def start_search_team(self, client_id, search_filter):
         print('Модуль в разработке!')
 
@@ -235,20 +270,25 @@ class VkBot:
     def matchmaker_mode_events(self):
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
+
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
+            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             # Oтветы:
             try:
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['search']['command'].lower() or text == menu['search']['button'].lower():
+                    self.del_post(str(last_bot_msg_id))
                     menu_.switch('search')
-                    self.start_mode(message='...Together forever,\n{}!'.format(self.get_user_name()))
+                    self.start_mode(message=f'...Together forever,\n{self.get_user_name()}!', inline=True)
                 elif text == menu['print']['command'].lower() or text == menu['print']['button'].lower():
-                    self.start_mode(message='Модуль в разработке,\n{}!'.format(self.get_user_name()))
-                elif self.exit():
-                    pass
+                    self.del_post(str(last_bot_msg_id))
+                    self.start_mode(message=f'Модуль в разработке,\n{self.get_user_name()}!', inline=True)
+                elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(str(last_bot_msg_id))
+                    self.exit(inline=True)
                 else:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
@@ -260,6 +300,26 @@ class VkBot:
                 self.my_except(other)
                 # raise other
 
+        # elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+        #     msg_id = self.event.obj.get('conversation_message_id', 0)
+        #     text = self.event.obj['text'].lower()
+        #     if 'нашли' in text:
+        #         menu_.service['last_bot_msg_id'] = msg_id
+        #         print(f"\nСообщение-{self.event.obj['id']} "
+        #               f"от бота для {self.event.obj.peer_id}:\n\t{self.event.obj['text']}")
+
+        elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+            current = self.current()
+            # if (menu['print']['command'].lower() in current['msg']['text']
+            #         or menu['print']['button'].lower() in current['msg']['text']):
+            if 'текущий' in current['msg']['text']:
+                menu_.service['last_bot_msg_id'] = current['msg']['id']
+                print(f"\nСообщение-{menu_.service['last_bot_msg_id']} "
+                      f"от бота для {current['peer_id']}:\n\t{current['msg']['text']}")
+            else:
+                print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
+                # pprint(current)
+
     def start_mode_events(self):
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
@@ -267,6 +327,7 @@ class VkBot:
         farewells = split_str_to_list(self._BOT_CONFIG['farewells'])
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             self.print_message_description()
+            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             # Oтветы:
             if text:
@@ -284,10 +345,12 @@ class VkBot:
                         farewell = farewells[randrange(len(farewells))]
                         self.send_msg(message=f'{farewell.upper()},\n{self.get_user_name()}!\n :))')
                     elif text == menu['matchmaker']['command'].lower() or text == menu['matchmaker']['button'].lower():
+                        self.del_post(str(last_bot_msg_id))
                         menu_.switch('matchmaker')
-                        self.start_mode(message='Спасибо за компанию,\n{}!'.format(self.get_user_name()))
+                        self.start_mode(message=f'Спасибо за компанию,\n{self.get_user_name()}!', inline=True)
                         self.send_msg_use_bot_dialog()
                     else:
+                        self.del_post(str(last_bot_msg_id))
                         self.start_mode(message='Не понимаю...', inline=True)
                 except KeyError as key_err:
                     self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
@@ -298,9 +361,9 @@ class VkBot:
                     # raise other
 
         elif self.event.type == VkBotEventType.MESSAGE_REPLY:
-            print('\nНовое сообщение:')
-            print('От меня для: ', end='')
-            print(self.event.obj.peer_id)
+            menu_.service['last_bot_msg_id'] = self.event.obj['id']
+            print(f'\nНовое сообщение {self.event.obj["id"]}:')
+            print('От меня для: ', self.event.obj.peer_id)
             print('Текст:\n', self.event.obj.text.lower())
             print()
 
@@ -340,16 +403,33 @@ class VkBot:
             post['keyboard'] = self.get_keyboard(inline=inline, callback=callback, empty=clear_keyboard)
         self.send_post(post)
         return post
+    #
+    # def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
+    #     menu_: VkBotMenu = self.current()['menu']
+    #     if not peer_id:
+    #         peer_id = self.event.message["peer_id"]
+    #     post = {'peer_id': peer_id, 'random_id': get_random_id(),
+    #             'message': message if self.event.from_chat else f'{message} Текущий{menu_}'}
+    #     if not inline:
+    #         self.send_post(post)
+    #     if not self.event.from_chat:
+    #         if not inline:
+    #             post['message'] = ''
+    #         post['keyboard'] = self.get_keyboard(inline=inline, callback=callback, empty=clear_keyboard)
+    #         self.send_post(post)
+    #     return post
 
-    def exit(self, callback=False) -> bool:
+    def exit(self, inline=False, callback=False) -> bool:
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         # text = event.text.lower()
         text = self.event.message['text'].lower()
         if text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+            if menu_.service.get('last_bot_msg_id'):
+                menu_.service['last_bot_msg_id'] = 0
             message = '{},\nсервис "{}" закрыт!'.format(self.get_user_name(), menu_.button)
             menu_.exit()
-            self.start_mode(message=message, callback=callback)
+            self.start_mode(message=message, inline=inline, callback=callback)
             return True
         return False
 
@@ -386,9 +466,10 @@ class VkBot:
 
     def del_post(self, del_msg_ids: str):
         res_ = {}
+        if not del_msg_ids:
+            return res_
         try:
             res = self.vk_api_methods.messages.delete(message_ids=del_msg_ids, delete_for_all=1)
-            # res = self.vk_session.method('messages.delete', {'message_ids': del_msg_ids, 'delete_for_all': 1})
             res_ = sum(res.get(msg_id, 0) for msg_id in res)
             print(f'\tУдалены сообщения {del_msg_ids}' if (res_ == len(res)) else '')
         except vk_api.exceptions.ApiError as no_permission:
@@ -416,12 +497,15 @@ class VkBot:
         peer_id_, peer_id = self.get_event_peer_id()
         if not peer_id:
             return {}
-        if peer_id not in self.conversations:
+        if peer_id in self.conversations:
+            self.conversations[peer_id]['msg'] = self.get_event_msg()
+        else:
             self.conversations[peer_id] = {
-                'vk_id': peer_id_,
+                'peer_id': peer_id_,
                 'menu': VkBotMenu(),
                 'filters': [],
-                'msg': self.get_event_msg()
+                'msg': self.get_event_msg(),
+                'start': 1
             }
         return self.conversations.get(peer_id, {})
 
@@ -440,13 +524,13 @@ class VkBot:
             if self.event.type == VkBotEventType.MESSAGE_NEW:
                 msg = {'type': self.event.t,
                        'from_id': self.event.message['from_id'],
-                       'mid': self.event.message['id'],
+                       'id': self.event.message['id'],
                        'cmid': self.event.message['conversation_message_id'],
                        'text': self.event.message['text'].lower()}
             elif self.event.type == VkBotEventType.MESSAGE_REPLY:
                 msg = {'type': self.event.t,
                        'from_id': self.event.obj['from_id'],
-                       'mid': self.event.obj['id'],
+                       'id': self.event.obj['id'],
                        'cmid': self.event.obj['conversation_message_id'],
                        'text': self.event.obj['text'].lower()}
         return msg

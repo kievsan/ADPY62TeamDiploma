@@ -95,6 +95,7 @@ def get_bot_menu_config_json():
                         'service_code': '11',
                         'description': 'мои любимчики',
                         'max_buttons_peer_line': '',
+                        'last_bot_msg_id': 0,
                         'services': {
                             'search': {
                                 'button': 'НАЙТИ',
@@ -265,7 +266,7 @@ def get_bot_menu_config_json():
                                         'description': 'Рекомендуем',
                                         'max_buttons_peer_line': '2',
                                         'last_one_found_id': 0,
-                                        'last_bot_msg_id': '',
+                                        'last_bot_msg_id': 0,
                                         'services': {
                                             'save': {
                                                 'button': 'Нравится',

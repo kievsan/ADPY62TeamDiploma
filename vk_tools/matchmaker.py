@@ -106,7 +106,7 @@ class Matchmaker(VkBot):
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         # client_id = self.get_event_peer_id()
-        client_id = self.current()['vk_id']
+        client_id = self.current()['peer_id']
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
 
         def check_user(user: dict) -> bool:
@@ -124,8 +124,7 @@ class Matchmaker(VkBot):
         def exit_from_search_team():
             self.current()['filters'] = []
             db_close()
-            if menu_.service.get('last_bot_msg_id', ''):
-                menu_.service['last_bot_msg_id'] = ''
+            self.send_msg(message='Поиск завершен...', keyboard=self.get_keyboard(empty=True))
 
         def db_close():
             """
@@ -198,7 +197,7 @@ class Matchmaker(VkBot):
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             msg_id = self.event.message.get('id', 0)
             self.print_message_description(msg_id)
-            msg_id = menu_.service.get('last_bot_msg_id', 0)
+            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
             text = self.event.message['text'].lower()
             user_id = menu_.service['last_one_found_id']
             # Oтветы:
@@ -206,31 +205,27 @@ class Matchmaker(VkBot):
                 if self.event.from_chat:
                     self.send_msg_use_bot_dialog()
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
-                    if msg_id:
-                        # self.del_post(del_msg_ids=str(self.event.message['id']))  # удалить user msg  - не работает
-                        self.del_post(del_msg_ids=str(msg_id))  # удалить msg бота
+                    # self.del_post(del_msg_ids=str(self.event.message['id']))  # удалить user msg  - не работает
+                    self.del_post(str(last_bot_msg_id))
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=client_id, ban=False, rec_date=date.today()))
+                    self.del_post(str(last_bot_msg_id))
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
-                    if msg_id:
-                        # self.del_post(del_msg_ids=str(self.event.message['id']))
-                        self.del_post(del_msg_ids=str(msg_id))
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=client_id, ban=True, rec_date=date.today()))
-                    if msg_id:
-                        # self.del_post(del_msg_ids=str(self.event.message['id']))
-                        self.del_post(del_msg_ids=str(msg_id))
+                    self.del_post(str(last_bot_msg_id))
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
-                elif self.exit():
+                elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(str(last_bot_msg_id))
                     exit_from_search_team()
-
+                    self.exit(inline=True)
                 else:
                     if not self.event.from_chat:
                         self.start_mode(message='Не понимаю...')
@@ -247,5 +242,5 @@ class Matchmaker(VkBot):
             text = self.event.obj['text'].lower()
             if 'нашли' in text:
                 menu_.service['last_bot_msg_id'] = msg_id
-                print(f"\nСообщение-{self.event.obj['id']} "
-                      f"от бота для {self.event.obj.peer_id}")
+                print(f"\nСообщение-{self.event.obj['id']} в беседе "
+                      f"от бота для {self.event.obj.peer_id}:\n\t{text}")
