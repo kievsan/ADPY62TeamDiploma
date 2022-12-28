@@ -316,8 +316,35 @@ def get_bot_menu_config_json():
                                 'filter': '',
                                 'service_code': '112',
                                 'description': 'СПИСОК моих пиплов',
+                                'last_one_found_id': 0,
+                                'last_bot_msg_id': 0,
                                 'max_buttons_peer_line': '',
-                                'services': {}},
+                                'services': {
+                                    'back': {
+                                        'button': 'Назад',
+                                        'command': '/<',
+                                        'filter': '',
+                                        'service_code': '112122',
+                                        'description': '',
+                                        'max_buttons_peer_line': '',
+                                        'services': {}},
+                                    'next': {
+                                        'button': 'Вперед',
+                                        'command': '/>',
+                                        'filter': '',
+                                        'service_code': '112123',
+                                        'description': '',
+                                        'max_buttons_peer_line': '',
+                                        'services': {}},
+                                    'exit': {
+                                        'button': 'Выход',
+                                        'command': '/:',
+                                        'filter': '',
+                                        'service_code': '112124',
+                                        'description': 'Выход из режима поиска подходящих пользователей',
+                                        'max_buttons_peer_line': '',
+                                        'services': {}}
+                                }},
                             'exit': {
                                 'button': 'Выход',
                                 'command': '/:',

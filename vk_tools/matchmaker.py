@@ -1,5 +1,6 @@
 #  Модуль в разработке
 
+import json
 from datetime import date
 from pprint import pprint
 
@@ -10,8 +11,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
 from vk_api.bot_longpoll import VkBotEventType
-from vk_tools.vk_bot import VkBot
 
+import vk_tools
+from vk_tools.template import CarouselButtons, Element, Carousel
+from vk_tools.vk_bot import VkBot
 from filters.standard_filter import StandardFilter, get_standard_filter
 from filters.free_user_case_filter import LegitimacyUserFilter
 from bot_config.config import get_config
@@ -38,10 +41,268 @@ class Matchmaker(VkBot):
         db = self._DB_CONFIG
         return 'postgresql://{}:{}@{}/{}'.format(db["login"], db["password"], db["server"], db["dbase name"])
 
+    def db_close(self):
+        """
+        Сохранение в базу и закрытие текущей локальной сессии
+        :return: err
+        """
+        err = ''
+        try:
+            self.db.commit()
+            self.db.close()
+        except Exception as err:
+            print(err)
+            # raise err
+        return err
+
     def add_filter(self, checker: object) -> list:
         filters: list = self.current()['filters']
         filters.append(checker)
         return filters
+
+    def identifying_db_query(self, client_id: int, user_id: int) -> VkIdol:
+        return self.db.query(VkIdol).filter(
+            VkIdol.vk_id == client_id).filter(
+            VkIdol.vk_idol_id == user_id).first()
+
+    def refresh_favorites(self, current):
+        """
+        Получение списка фаворитов клиента и сохранение списка id фаворитов
+        :param current: окружение/данные текущего клиента
+        :return: favorites: список фаворитов
+        """
+        favorites = self.db.query(VkIdol).filter(
+            VkIdol.vk_id == current['peer_id'])  # .filter(not VkIdol.ban)  # ???
+        current['favorites']['list_ids'] = sorted(idol.vk_idol_id for idol in favorites.all())
+        # print('favorite_ids =', current['favorites']['list_ids'])  # ------------------------------------
+        return favorites
+
+    def start_favorites_show(self, block_size: int = 10):
+        current = self.current()
+        menu_: VkBotMenu = current['menu']
+        if not self.db:
+            self.db = self.SessionLocal()
+
+        block_size = block_size if 1 < block_size < 11 else 10
+        current['favorites']['block_size'] = block_size
+        favorites = self.refresh_favorites(current).all()
+        if favorites:
+            self.event.message['text'] = menu_.services['next']['button']  # 'ВПЕРЁД'
+            self.favorites_show_mode_events()
+        else:
+            self.event.message['text'] = menu_.services['exit']['button']  # 'ВЫХОД'
+            self.favorites_show_mode_events()
+
+    def favorites_show_mode_events(self):
+        current = self.current()
+        menu_: VkBotMenu = current['menu']
+        menu = menu_.services
+        template_menu = ['Расстаться!']
+        client_id = current['peer_id']
+        api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
+
+        def get_photo_id(user: dict):
+            """
+            Получение фото и прикрепление её к сообщению
+            :param user: из ответа на api-запрос
+            :return: attachment: фото будет передано в сообщение attachment-параметром. Если нет, то ссылкой или ''
+            """
+            photo_id = user.get('photo_id', '')
+            if photo_id:
+                return photo_id
+            photo_vk_url = user.get('photo_max', '')
+            photo_url = photo_vk_url if photo_vk_url else user.get('photo_max_origin', '')
+            if photo_url:
+                img = requests.get(photo_url, stream=True)
+                params = self.vk_upload.photo_messages(img.raw)[0]
+                # pprint(params)  # -------------------------------------------
+                photo_id = '{}_{}'.format(params['owner_id'], params['id'])
+            return photo_id
+
+        def exit_from_favorites_show():
+            self.set_empty_favorites()
+            self.db_close()
+            self.send_msg(message='Просмотр завершен...', keyboard=self.get_keyboard(empty=True))
+
+        def refresh_carousel_of_favorite_users():
+            """
+            Возвращает следующую карусель избранных пользователей
+            :return: user_ids: list(str): список id фаворитов
+                   : users_info: dict: словарь со скачанной инфой о фаворитах
+            """
+            self.refresh_favorites(current)
+            block_size = current['favorites']['block_size']
+            favorites = current['favorites']
+            count_favorites = len(favorites['list_ids'])
+            current_block_number = favorites['current_block']['number']
+            next_favorite = current_block_number * block_size
+
+            print('Фавориты {} по {}, блок-{}:'.format(
+                favorites['list_ids'], block_size, current_block_number))  # ---------------------
+            last_favorite = next_favorite + block_size
+
+            if last_favorite > count_favorites:  # --- фаворитов может не хватать на всю карусель
+                last_favorite = count_favorites
+
+            #  --- Готовим данные фаворитов для карусели:
+            user_ids = list(str(id_) for id_ in favorites['list_ids'][next_favorite:last_favorite])
+            users_info = self.vk_api_methods.users.get(
+                user_ids=','.join(user_ids), fields=api_fields)
+            #  --- Сохраняем данные:
+            favorites['current_block'] = {
+                'number': current_block_number,
+                'user_ids': user_ids,
+                'users_info': users_info
+            }
+            return user_ids, users_info
+
+        def get_next_carousel_of_favorite_users():
+            """
+            Возвращает следующую карусель избранных пользователей
+            :return: user_ids: list(str): список id фаворитов
+                   : users_info: dict: словарь со скачанной инфой о фаворитах
+            """
+            block_size = current['favorites']['block_size']
+            favorites = current['favorites']
+            count_favorites = len(favorites['list_ids'])
+            current_block_number = favorites['current_block']['number']
+
+            if favorites['start']:  # --- если это запуск первой карусели
+                print('это запуск первой карусели')
+                favorites['start'] = False
+                next_favorite = current_block_number * block_size
+            else:
+                current_block_number += 1  # --- Готовим новую карусель
+                next_favorite = current_block_number * block_size
+                if next_favorite > count_favorites:  # --- Следующей карусели нет
+                    return favorites['current_block']['user_ids'], favorites['current_block']['users_info']
+                favorites['previous_block'].put(favorites['current_block'])  # --- сохраним старую карусель
+
+            print('Фавориты {} по {}, блок-{}:'.format(
+                favorites['list_ids'], block_size, current_block_number))  # ---------------------
+            last_favorite = next_favorite + block_size
+
+            if last_favorite > count_favorites:  # --- фаворитов может не хватать на всю карусель
+                last_favorite = count_favorites
+
+            #  --- Готовим данные фаворитов для карусели:
+            user_ids = list(str(id_) for id_ in favorites['list_ids'][next_favorite:last_favorite])
+            users_info = self.vk_api_methods.users.get(
+                user_ids=','.join(user_ids), fields=api_fields)
+            #  --- Сохраняем данные:
+            favorites['current_block'] = {
+                'number': current_block_number,
+                'user_ids': user_ids,
+                'users_info': users_info
+            }
+            return user_ids, users_info
+
+        def get_previous_carousel_of_favorite_users():
+            """
+            Возвращает предыдущую карусель избранных пользователей
+            :return: carousel
+            """
+            current_block = current['favorites']['current_block']
+            if not current['favorites']['previous_block'].empty():
+                current['favorites']['current_block'] = current['favorites']['previous_block'].get()
+                current_block = current['favorites']['current_block']
+            return current_block['user_ids'], current_block['users_info']
+
+        def create_template(carousel_menu: list,
+                            get_carousel=get_next_carousel_of_favorite_users) -> json:
+            user_ids, users_info = get_carousel()
+            print(f'\t{user_ids}')  # ----------------------------------
+            template = list()
+            for id_, user in zip(user_ids, users_info):
+                city = user.get('city', {})
+                template_element = Element(
+                    title='{} {}'.format(user['first_name'], user['last_name']),
+                    description='{} {} {}\n\tid={}   {}'.format(
+                        'жен.' if user['sex'] == 1 else 'муж.',
+                        user.get('bdate', ''),
+                        city['title'] if city else '',
+                        id_,
+                        'БАН' if self.identifying_db_query(client_id=client_id, user_id=int(id_)).ban else ''),
+                    link=f'https://vk.com/id{id_}',
+                    buttons=CarouselButtons(button_labels=carousel_menu, button_id=id_).add_buttons()
+                )
+                template.append(template_element)
+            # pprint(template)  # ---------------------------------------------
+            carousel = Carousel(template).add_carousel()
+            return carousel
+
+        ###
+
+        title = 'Список избранных'
+
+        last_bot_msg_id = str(menu_.service['last_bot_msg_id'] if menu_.service.get('last_bot_msg_id', 0) else '')
+
+        if self.event.type == VkBotEventType.MESSAGE_NEW:
+            msg_id = self.event.message.get('id', 0)
+            self.print_message_description(msg_id)
+            text = current['msg']['text']
+            # Oтветы:
+            try:
+                if self.event.from_chat:
+                    self.send_msg_use_bot_dialog()
+                elif text == menu['back']['command'].lower() or text == menu['back']['button'].lower():
+                    self.del_post(last_bot_msg_id)
+                    if current['client_info']['carousel']:
+                        self.send_msg(peer_id=client_id,
+                                      template=create_template(template_menu, get_previous_carousel_of_favorite_users),
+                                      message='{}\t(id={})\n\t{}'.format(
+                                          self.get_user_name(client_id), client_id, title))
+                    else:
+                        pass
+                elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
+                    self.del_post(last_bot_msg_id)
+                    if current['client_info']['carousel']:
+                        self.send_msg(peer_id=client_id,
+                                      template=create_template(template_menu),
+                                      message='{}\t(id={})\n\t{}'.format(
+                                          self.get_user_name(client_id), client_id, title))
+                    else:
+                        pass
+                elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(last_bot_msg_id)
+                    exit_from_favorites_show()
+                    self.exit(inline=True)
+                elif current['client_info']['carousel'] and text in (command.lower() for command in template_menu):
+                    if text == template_menu[0].lower():  # удалить:
+                        payload = json.loads(self.event.message.get('payload', '{}'))  # messagePayload
+                        user_id = int(payload.get('user_id', '0')) if payload else 0
+                        if user_id:
+                            print(f'Удаляем id{user_id}')  # ---------------------
+                            user_being_deleted = self.identifying_db_query(client_id=client_id, user_id=user_id)
+                            if user_being_deleted:
+                                self.db.delete(user_being_deleted)
+                                self.del_post(last_bot_msg_id)
+                                self.send_msg(
+                                    peer_id=client_id,
+                                    template=create_template(template_menu, refresh_carousel_of_favorite_users),
+                                    message='{}\t(id={})\n\t{}'.format(
+                                        self.get_user_name(client_id), client_id, title))
+                            else:
+                                print(f'id{user_id} в БД не найден!')  # ---------------------
+                else:
+                    if not self.event.from_chat:
+                        # self.del_post(last_bot_msg_id)
+                        self.start_mode(message='Не понимаю...')
+            except KeyError as key_err:
+                self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
+                                        f' в favorites_show_mode_events', menu)
+                raise key_err
+            except Exception as other:
+                self.my_except(other)
+                raise other
+
+        elif self.event.type == VkBotEventType.MESSAGE_REPLY:
+            msg_id = self.event.obj.get('id', 0)
+            text = self.event.obj['text'].lower()
+            if ('текущий' in text) or (title.lower() in text):
+                menu_.service['last_bot_msg_id'] = msg_id
+                print(f"\nСообщение-{self.event.obj['id']} "
+                      f"от бота для {self.event.obj.peer_id}:\n\t{text}")
 
     def start_search_team(self, client_id: int, search_filter: dict):  # search_advisable_users
         """
@@ -105,7 +366,6 @@ class Matchmaker(VkBot):
 
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
-        # client_id = self.get_event_peer_id()
         client_id = self.current()['peer_id']
         api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
 
@@ -123,22 +383,9 @@ class Matchmaker(VkBot):
 
         def exit_from_search_team():
             self.current()['filters'] = []
-            db_close()
+            menu_.service['last_one_found_id'] = 0
+            self.db_close()
             self.send_msg(message='Поиск завершен...', keyboard=self.get_keyboard(empty=True))
-
-        def db_close():
-            """
-            Сохранение в базу и закрытие текущей локальной сессии
-            :return: err
-            """
-            err = ''
-            try:
-                self.db.commit()
-                self.db.close()
-            except Exception as err:
-                print(err)
-                # raise err
-            return err
 
         def get_foto_attachment(user: dict):
             """
@@ -151,6 +398,7 @@ class Matchmaker(VkBot):
             if photo_url:
                 img = requests.get(photo_url, stream=True)
                 params = self.vk_upload.photo_messages(img.raw)[0]
+                # pprint(params)  # -------------------------------------------
                 attachment = 'photo{}_{}_{}'.format(
                     params['owner_id'], params['id'], params['access_key'])
             else:
@@ -171,7 +419,7 @@ class Matchmaker(VkBot):
                 if not users:
                     print('\tПоздравляем, ты всех перебрал, кто подходил под твои условия!')
                     self.current()['filters'] = []
-                    db_close()
+                    self.db_close()
                     return {}
                 for user in users:
                     if check_user(user):
@@ -190,7 +438,7 @@ class Matchmaker(VkBot):
         if self.event.type == VkBotEventType.MESSAGE_NEW:
             msg_id = self.event.message.get('id', 0)
             self.print_message_description(msg_id)
-            last_bot_msg_id = menu_.service.get('last_bot_msg_id', 0)
+            last_bot_msg_id = str(menu_.service.get('last_bot_msg_id', ''))
             text = self.event.message['text'].lower()
             user_id = menu_.service['last_one_found_id']
             # Oтветы:
@@ -199,28 +447,29 @@ class Matchmaker(VkBot):
                     self.send_msg_use_bot_dialog()
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
                     # self.del_post(del_msg_ids=str(self.event.message['id']))  # удалить user msg  - не работает
-                    self.del_post(str(last_bot_msg_id))
+                    self.del_post(last_bot_msg_id)
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
                 elif text == menu['save']['command'].lower() or text == menu['save']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=client_id, ban=False, rec_date=date.today()))
-                    self.del_post(str(last_bot_msg_id))
+                    self.del_post(last_bot_msg_id)
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
                 elif text == menu['ban']['command'].lower() or text == menu['ban']['button'].lower():
                     self.db.add(VkIdol(vk_idol_id=user_id, vk_id=client_id, ban=True, rec_date=date.today()))
-                    self.del_post(str(last_bot_msg_id))
+                    self.del_post(last_bot_msg_id)
                     if not get_next_user():
                         exit_from_search_team()
                         self.exit()
                 elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
-                    self.del_post(str(last_bot_msg_id))
+                    self.del_post(last_bot_msg_id)
                     exit_from_search_team()
                     self.exit(inline=True)
                 else:
                     if not self.event.from_chat:
+                        self.del_post(last_bot_msg_id)
                         self.start_mode(message='Не понимаю...')
             except KeyError as key_err:
                 self.my_except(key_err, f'Попытка взять значение по ошибочному ключу {key_err}'
@@ -235,5 +484,5 @@ class Matchmaker(VkBot):
             text = self.event.obj['text'].lower()
             if 'нашли' in text:
                 menu_.service['last_bot_msg_id'] = msg_id
-                print(f"\nСообщение-{self.event.obj['id']} в беседе "
+                print(f"\nСообщение-{self.event.obj['id']} "
                       f"от бота для {self.event.obj.peer_id}:\n\t{text}")
