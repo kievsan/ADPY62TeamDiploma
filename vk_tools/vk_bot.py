@@ -81,7 +81,7 @@ class VkBot:
             else:
                 print('Слишком много кнопок для одной строки!')
                 break
-            # pprint(keyboard.get_keyboard())
+        # pprint(keyboard.get_keyboard())  # ---------------------------------------
         return keyboard.get_keyboard()
 
     def start(self):
@@ -293,9 +293,6 @@ class VkBot:
                 elif text == menu['print']['command'].lower() or text == menu['print']['button'].lower():  # +++++++++
                     self.del_post(last_bot_msg_id)
                     menu_.switch('print')
-                    # if self.current()['client_info']['carousel']:
-                    #     self.start_carousel()
-                    # else:
                     self.start_mode(message=f'...Together forever,\n{self.get_user_name()}!')  # ====
                     self.start_favorites_show()
                     # self.start_mode(message=f'Модуль в разработке,\n{self.get_user_name()}!', inline=True)

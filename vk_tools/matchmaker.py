@@ -11,9 +11,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
 from vk_api.bot_longpoll import VkBotEventType
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 import vk_tools
-from vk_tools.template import CarouselButtons, Element, Carousel
+from vk_tools.template import CarouselButtons, Element, Carousel, Button
 from vk_tools.vk_bot import VkBot
 from filters.standard_filter import StandardFilter, get_standard_filter
 from filters.free_user_case_filter import LegitimacyUserFilter
@@ -82,8 +83,10 @@ class Matchmaker(VkBot):
         menu_: VkBotMenu = current['menu']
         if not self.db:
             self.db = self.SessionLocal()
+        # current['client_info']['carousel'] = False  # --------------------------
 
-        block_size = block_size if 1 < block_size < 11 else 10
+        max_size = 10 if current['client_info']['carousel'] else 6
+        block_size = block_size if 1 <= block_size <= max_size else max_size
         current['favorites']['block_size'] = block_size
         favorites = self.refresh_favorites(current).all()
         if favorites:
@@ -208,6 +211,9 @@ class Matchmaker(VkBot):
                 current_block = current['favorites']['current_block']
             return current_block['user_ids'], current_block['users_info']
 
+        def is_ban(client_id_: int, user_id_: int):
+            return 'БАН' if self.identifying_db_query(client_id=client_id_, user_id=int(user_id_)).ban else ''
+
         def create_template(carousel_menu: list,
                             get_carousel=get_next_carousel_of_favorite_users) -> json:
             user_ids, users_info = get_carousel()
@@ -222,7 +228,7 @@ class Matchmaker(VkBot):
                         user.get('bdate', ''),
                         city['title'] if city else '',
                         id_,
-                        'БАН' if self.identifying_db_query(client_id=client_id, user_id=int(id_)).ban else ''),
+                        is_ban(client_id, id_)),
                     link=f'https://vk.com/id{id_}',
                     buttons=CarouselButtons(button_labels=carousel_menu, button_id=id_).add_buttons()
                 )
@@ -230,6 +236,22 @@ class Matchmaker(VkBot):
             # pprint(template)  # ---------------------------------------------
             carousel = Carousel(template).add_carousel()
             return carousel
+
+        def create_favorite_users_list_as_link_keyboard(get_carousel=get_next_carousel_of_favorite_users):
+            user_ids, users_info = get_carousel()
+            print(f'\t{user_ids}')  # ----------------------------------
+            keyboard = {"one_time": False, "inline": True, "buttons": []}
+            for id_, user in zip(user_ids, users_info):
+                id_info = "(id={} {})".format(id_, is_ban(client_id, id_)).strip()
+                user_name = f"{user['last_name']} {user['first_name']}"[:25-len(id_info)]
+                button_text = "{} {}".format(user_name, id_info)
+                button_link = f"https://vk.com/id{id_}"
+                button = Button(button_type='open_link', label=button_text, link=button_link, payload={'user_id': id_})
+                # print(button)  # ----------------------------------
+                keyboard['buttons'].append([button])
+            # pprint(keyboard)  # ---------------------------------------
+            keyboard = json.dumps(keyboard, ensure_ascii=False).encode('utf-8')
+            return keyboard.decode('utf-8')
 
         ###
 
@@ -253,7 +275,11 @@ class Matchmaker(VkBot):
                                       message='{}\t(id={})\n\t{}'.format(
                                           self.get_user_name(client_id), client_id, title))
                     else:
-                        pass
+                        self.send_msg(peer_id=client_id,
+                                      keyboard=create_favorite_users_list_as_link_keyboard(
+                                          get_previous_carousel_of_favorite_users),
+                                      message='{}\t(id={})\n\t{}'.format(
+                                          self.get_user_name(client_id), client_id, title))
                 elif text == menu['next']['command'].lower() or text == menu['next']['button'].lower():
                     self.del_post(last_bot_msg_id)
                     if current['client_info']['carousel']:
@@ -262,7 +288,10 @@ class Matchmaker(VkBot):
                                       message='{}\t(id={})\n\t{}'.format(
                                           self.get_user_name(client_id), client_id, title))
                     else:
-                        pass
+                        self.send_msg(peer_id=client_id,
+                                      keyboard=create_favorite_users_list_as_link_keyboard(),
+                                      message='{}\t(id={})\n\t{}'.format(
+                                          self.get_user_name(client_id), client_id, title))
                 elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
                     self.del_post(last_bot_msg_id)
                     exit_from_favorites_show()

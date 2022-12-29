@@ -72,9 +72,9 @@ class Button:
                 color: Optional[str] = ButtonColor.PRIMARY,
                 link: Optional[str] = 'https://vk.com',
                 payload: Optional[dict] = None):
-        if button_type == 'text':
+        if button_type.lower() == 'text':
             obj = Text(label=label, color=color, payload=payload)
-        elif button_type == 'open_link':
+        elif button_type.lower() == 'open_link':
             obj = OpenLink(label=label, link=link, payload=payload)
         else:
             print("Parameter button_type has: 'text' or 'open_link'")
@@ -91,8 +91,8 @@ class Text:
         return {'action': {'type': 'text', 'label': label, 'payload': payload},
                 'color': color}
 
-    def __str__(self):
-        print('\tText-button'.format())
+    # def __str__(self):
+    #     print('\tText-button')
 
 
 class OpenLink:
@@ -103,5 +103,5 @@ class OpenLink:
         print('\twas created Link-button: {}, link: {}'.format(label, link))
         return {'action': {'type': 'open_link', 'label': label, 'link': link, 'payload': payload}}
 
-    def __str__(self):
-        print('\tLink-button'.format())
+    # def __str__(self):
+    #     print('\tLink-button')
