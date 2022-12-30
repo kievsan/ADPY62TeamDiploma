@@ -431,6 +431,14 @@ class Matchmaker(VkBot):
             self.send_msg(message='Поиск завершен...', keyboard=self.get_keyboard(empty=True))
 
         def get_user_photos(user: dict, album_id: str = 'profile'):
+            """
+            Поиск фотографий пользователя методом photos.get и сервис-токеном.
+            Фото берется сначала из данных, полученных из vk_api методом user.get.
+            Затем ищутся фото в профиле пользователя методом photos.get.
+            :param user: инфа пользователя, полученная из vk_api методом user.get
+            :param album_id:
+            :return: количество фото и их список взяты из профиля (альбом 'profile')
+            """
             url = 'https://api.vk.com/method/photos.get'
             params = {
                 'owner_id': user['id'],
