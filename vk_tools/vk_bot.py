@@ -1,4 +1,5 @@
 #
+
 import queue
 from random import randrange
 from pprint import pprint
@@ -49,7 +50,7 @@ class VkBot:
         self._BOT_CONFIG: dict = get_config()
         self.group_id = self._BOT_CONFIG['group_id']
         self.conversations = {}
-        self.vk_session = vk_api.VkApi(token=self._BOT_CONFIG['token'])  # vk_api.vk_api.VkApi
+        self.vk_session = vk_api.VkApi(token=self._BOT_CONFIG['group_token'])  # vk_api.vk_api.VkApi
         self.vk_upload = VkUpload(self.vk_session)
         self.longpoll = VkBotLongPoll(self.vk_session, group_id=self.group_id)
         self.event: VkBotMessageEvent = {}
@@ -70,14 +71,17 @@ class VkBot:
             else:
                 buttons_peer_line += 1
             if buttons_peer_line < 4:
+                link = buttons['links'][num]
+                payload = buttons['payloads'][num]
                 if callback:
-                    keyboard.add_callback_button(
-                        label=button,
-                        color=VkKeyboardColor.NEGATIVE if buttons['filter'][num] else VkKeyboardColor.PRIMARY,
-                        payload={"type": "show_snackbar", "text": "Это исчезающее сообщение на экране"}, )
+                    pass
                 else:
-                    keyboard.add_button(
-                        button, VkKeyboardColor.NEGATIVE if buttons['filter'][num] else VkKeyboardColor.PRIMARY)
+                    if link:
+                        keyboard.add_openlink_button(button, link, payload)
+                    else:
+                        keyboard.add_button(
+                            button, VkKeyboardColor.NEGATIVE if buttons['filter'][num] else VkKeyboardColor.PRIMARY,
+                            payload)
             else:
                 print('Слишком много кнопок для одной строки!')
                 break
@@ -460,7 +464,7 @@ class VkBot:
         if not del_msg_ids:
             return res_
         try:
-            print(f'\tУдаляются сообщения {del_msg_ids}')  # ------------------------------------
+            # print(f'\tУдаляются сообщения {del_msg_ids}')  # ------------------------------------
             res = self.vk_api_methods.messages.delete(message_ids=del_msg_ids, delete_for_all=1)
             res_ = sum(res.get(msg_id, 0) for msg_id in res)
             print(f'\tУдалены сообщения {del_msg_ids}' if (res_ == len(res)) else '')  # -------------

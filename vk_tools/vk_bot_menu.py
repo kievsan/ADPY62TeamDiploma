@@ -47,7 +47,9 @@ class VkBotMenu:
     def get_buttons(self):
         return {'max': self.max_button,
                 'buttons': list(self.services[service]['button'] for service in self.services),
-                'filter': list(self.services[service]['filter'] for service in self.services)}
+                'links': list(self.services[service].get('link', '').lower() for service in self.services),
+                'payloads': list(self.services[service].get('payload', {}) for service in self.services),
+                'filter': list(self.services[service].get('filter', '') for service in self.services)}
 
     def get_filter_string(self, param=''):
         buttons = self.get_buttons()

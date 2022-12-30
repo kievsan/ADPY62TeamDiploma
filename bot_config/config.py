@@ -69,9 +69,14 @@ def get_bot_config_json():
     return {
         'name': 'VKinder10',
         'group_id': '217491346',
-        'token': 'vk1.a.-Y1qvpVh8DSjq4SHejdoJXPf089sA5Kuqnc40NVHx1uEUxEhe0r4d9vtlaD2gX9ABtm'
+        'group_token': 'vk1.a.-Y1qvpVh8DSjq4SHejdoJXPf089sA5Kuqnc40NVHx1uEUxEhe0r4d9vtlaD2gX9ABtm'
                  'JlxECTemdmVRc5ZGNCe92pN76NdNjXAc4631s5-xzreQi2Ojv59BGidAJvy6VUgLEo5IlZUHGK'
                  '-1JGJir0dHY2k4bPHlky2nk0fks8miDKMrQdO2lvyhqakGVsiz1RCBF3i7hXxx_AGXWdXINew',
+        'app_id': '51486212',
+        'app_token': 'vk1.a.lutHpZIC0dBbNzDlEIdUJblrLLZoy5yLzXKg4v8jncRp3Lmpyw'
+                     '-PTBSR0n3YQCMycVMIjiFRuGS9GPXn-bTRMwTft9CMYtplY0N8T6VLjuBMX3yer7XSdNfu5v_'
+                     '-RQ0ptBWstkZ67T3Oq7prprY85Av4sopaF2d3MH3q8dB6ieurqA8W0mtnDIZPVlNT91NUyS9BudVwgXmj68EvLkvVUg',
+        'service_token': 'a8d6a900a8d6a900a8d6a900b9abc73704aa8d6a8d6a900cba977d4eb1912d13d7a792c',
         'greetings': 'привет, hi, чао, вечер в хату',
         'farewells': 'пока, by, адьюс, не скучай, быть добру'
     }
@@ -271,6 +276,8 @@ def get_bot_menu_config_json():
                                             'save': {
                                                 'button': 'Нравится',
                                                 'command': '/+',
+                                                'link': '',
+                                                'payload': {},
                                                 'filter': '',
                                                 'service_code': '12321',
                                                 'description': '',
@@ -279,6 +286,8 @@ def get_bot_menu_config_json():
                                             'ban': {
                                                 'button': 'В бан!',
                                                 'command': '/-',
+                                                'link': '',
+                                                'payload': {},
                                                 'filter': '',
                                                 'service_code': '12322',
                                                 'description': '',
@@ -287,6 +296,8 @@ def get_bot_menu_config_json():
                                             'next': {
                                                 'button': 'Следующий',
                                                 'command': '/>',
+                                                'link': '',
+                                                'payload': {},
                                                 'filter': '',
                                                 'service_code': '12323',
                                                 'description': '',
@@ -295,9 +306,21 @@ def get_bot_menu_config_json():
                                             'exit': {
                                                 'button': 'Выход',
                                                 'command': '/:',
+                                                'link': '',
+                                                'payload': {},
                                                 'filter': '',
                                                 'service_code': '12324',
                                                 'description': 'Выход из режима просмотра результатов поиска',
+                                                'max_buttons_peer_line': '',
+                                                'services': {}},
+                                            'vk_user_page': {
+                                                'button': 'Страница пользователя',
+                                                'command': '/>',
+                                                'link': '',
+                                                'payload': {},
+                                                'filter': '',
+                                                'service_code': '12325',
+                                                'description': '',
                                                 'max_buttons_peer_line': '',
                                                 'services': {}}
                                         }},

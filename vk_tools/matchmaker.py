@@ -243,7 +243,7 @@ class Matchmaker(VkBot):
             keyboard = {"one_time": False, "inline": True, "buttons": []}
             for id_, user in zip(user_ids, users_info):
                 id_info = "(id={} {})".format(id_, is_ban(client_id, id_)).strip()
-                user_name = f"{user['last_name']} {user['first_name']}"[:25-len(id_info)]
+                user_name = f"{user['last_name']} {user['first_name']}"[:25 - len(id_info)]
                 button_text = "{} {}".format(user_name, id_info)
                 button_link = f"https://vk.com/id{id_}"
                 button = Button(button_type='open_link', label=button_text, link=button_link, payload={'user_id': id_})
@@ -376,6 +376,10 @@ class Matchmaker(VkBot):
         #   AdvancedChecker
         #
 
+        for service in menu_.services:
+            menu_.services[service]['link'] = ''
+            menu_.services[service]['payload'] = ''
+
         menu_.service['last_one_found_id'] = 0
         self.event.message['text'] = menu_.services['next']['button']  # 'СЛЕДУЮЩИЙ'
         self.works_search_team()
@@ -396,7 +400,14 @@ class Matchmaker(VkBot):
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         client_id = self.current()['peer_id']
-        api_fields = 'sex,city,bdate,counters,photo_id,photo_max,_photo_max_origin'
+        # api_fields = 'sex,city,home_town,bdate,counters,photo_id,photo_max,_photo_max_origin,crop_photo,has_photo,photo_100,photo_200,photo_200_orig,photo_400_orig,photo_50'
+        api_fields = ('sex,city,home_town,bdate,counters,' +
+                      'photo_id,photo_max,_photo_max_origin,' +
+                      'crop_photo,has_photo,' +
+                      'photo_100,' +
+                      'photo_200,photo_200_orig,' +
+                      'photo_400_orig,' +
+                      'photo_50')
 
         def check_user(user: dict) -> bool:
             """
@@ -414,25 +425,82 @@ class Matchmaker(VkBot):
             self.current()['filters'] = []
             menu_.service['last_one_found_id'] = 0
             self.db_close()
+            for service in menu_.services:
+                menu_.services[service]['link'] = ''
+                menu_.services[service]['payload'] = ''
             self.send_msg(message='Поиск завершен...', keyboard=self.get_keyboard(empty=True))
 
-        def get_foto_attachment(user: dict):
+        def get_user_photos(user: dict, album_id: str = 'profile'):
+            url = 'https://api.vk.com/method/photos.get'
+            params = {
+                'owner_id': user['id'],
+                'album_id': album_id,  # служебные: 'profile', 'wall'
+                'access_token': self._BOT_CONFIG['service_token'],
+                'v': '5.131'
+            }
+            res = requests.get(url, params=params).json()
+            # pprint(res)  # ----------------------------------
+            response: dict = res.get('response', {})
+            user_photos_count: int = response.get('count', '') if response else 0
+            user_photos: list = response.get('items', '') if response else []
+
+            if not user_photos_count:
+                err: dict = res.get('error', {})
+                if err:
+                    print('\t{} (err{})'.format(err.get("error_msg", ""),
+                                                err.get("error_code", "")))  # ------------------------------
+
+            return user_photos_count, user_photos
+
+        def get_foto_attachment(photo_url_1: str = '', photo_url_2: str = '', photo_id: str = ''):
             """
             Получение фото и прикрепление её к сообщению
-            :param user: из ответа на api-запрос
+            :param photo_id:
+            :param photo_url_1:
+            :param photo_url_2:
             :return: attachment: фото будет передано в сообщение attachment-параметром. Если нет, то ссылкой или ''
             """
-            photo_vk_url = user.get('photo_max', '')
-            photo_url = photo_vk_url if photo_vk_url else user.get('photo_max_origin', '')
+            print(f'\t\tphoto_id: {photo_id}' if photo_id else '')  # -------------------------------------
+            if not photo_url_1 + photo_url_2 + photo_id:
+                return ''
+            photo_url = photo_url_1 if photo_url_1 else photo_url_2
             if photo_url:
                 img = requests.get(photo_url, stream=True)
-                params = self.vk_upload.photo_messages(img.raw)[0]
+                photo = img.raw
+                params = self.vk_upload.photo_messages(photo)[0]
                 # pprint(params)  # -------------------------------------------
                 attachment = 'photo{}_{}_{}'.format(
                     params['owner_id'], params['id'], params['access_key'])
             else:
-                attachment = user.get('photo_id', '')
+                attachment = photo_id
             return attachment
+
+        def get_photo_attachment(user: dict):
+            attachment = []
+            for size in ['max', '400', '200', '100', '50']:
+                photo = get_foto_attachment(user.get(f'photo_{size}', ''),
+                                            user.get(f'photo_{size}_origin', ''),
+                                            user.get('photo_id', ''))
+                if photo:
+                    attachment.append(photo)
+                    break
+
+            if not user.get('has_photo', 0):
+                print('\tФотографий в профиле не найдено!')
+            else:
+                user_photos_count, user_photos = get_user_photos(user)
+                print(f'\tНайдено {user_photos_count} фото в профиле!')
+                for photo in user_photos:
+                    max_size_photo: dict = max((size_photo for size_photo in photo['sizes']),
+                                               key=lambda size: size['height'] + size['width'], default=0)
+                    if max_size_photo:
+                        photo_url = max_size_photo['url']
+                        photo_id = f'{user["id"]}_{photo["id"]}'
+                        if photo_id != user["photo_id"]:
+                            attachment.append(get_foto_attachment(photo_url, '', photo_id))
+                        if len(attachment) == 3:
+                            break
+            return ','.join(attachment)
 
         def get_next_user() -> dict:
             """
@@ -453,9 +521,11 @@ class Matchmaker(VkBot):
                 for user in users:
                     if check_user(user):
                         menu_.service['last_one_found_id'] = user['id']
+                        menu_.services['vk_user_page']['link'] = f"https://vk.com/id{user['id']}"
+                        menu_.services['vk_user_page']['payload'] = {'user_id': user['id']}
                         self.send_msg(peer_id=client_id, keyboard=self.get_keyboard(inline=True),
                                       message='Нашли {}'.format(self.get_user_title(user_id=user["id"])),
-                                      attachment=get_foto_attachment(user))
+                                      attachment=get_photo_attachment(user))
                         return user
                 last_id += requests_step
                 number_block += 1
@@ -493,6 +563,10 @@ class Matchmaker(VkBot):
                         exit_from_search_team()
                         self.exit()
                 elif text == menu['exit']['button'].lower() or text == menu['exit']['command'].lower():
+                    self.del_post(last_bot_msg_id)
+                    exit_from_search_team()
+                    self.exit(inline=True)
+                elif text == menu['vk_user_page']['button'].lower() or text == menu['vk_user_page']['command'].lower():
                     self.del_post(last_bot_msg_id)
                     exit_from_search_team()
                     self.exit(inline=True)
