@@ -7,6 +7,7 @@ from pprint import pprint
 import requests
 
 import sqlalchemy
+import vk_api
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
 
@@ -475,10 +476,14 @@ class Matchmaker(VkBot):
             if photo_url:
                 img = requests.get(photo_url, stream=True)
                 photo = img.raw
-                params = self.vk_upload.photo_messages(photo)[0]
-                # pprint(params)  # -------------------------------------------
-                attachment = 'photo{}_{}_{}'.format(
-                    params['owner_id'], params['id'], params['access_key'])
+                try:
+                    params = self.vk_upload.photo_messages(photo)[0]
+                    # pprint(params)  # -------------------------------------------
+                    attachment = 'photo{}_{}_{}'.format(
+                        params['owner_id'], params['id'], params['access_key'])
+                except vk_api.exceptions.ApiError as err:
+                    print(err)
+                    attachment = photo_id
             else:
                 attachment = photo_id
             return attachment
