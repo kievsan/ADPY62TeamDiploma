@@ -43,6 +43,18 @@ def filter_switch_2(switch_filter, filter_2, filter_3):
 
 
 class VkBot:
+    """
+    _BOT_CONFIG: dict: Настройки бота из 'bot.cfg'
+    group_id :  id бота
+    conversations : dict Инфо клиентов бота в многопользовательской среде - беседа, меню, избранные и пр.
+    vk_session : vk_api.vk_api.VkApi Сессия api vk по токену.
+                                    Используем внешний vk_api модуль для организации работы бота.
+    vk_upload : VkUpload(vk_session) : upload сервис
+    longpoll : обработчик событий ботом
+    event : VkBotMessageEvent dict : События
+    vk_tools : vk_api.tools.VkTools : пул инструментов vk_api
+    vk_api_methods : vk_api.vk_api.VkApiMethod : requests-Методы
+    """
     # виды callback-кнопок
     __callback_types__ = ("show_snackbar", "open_link", "open_app")
 
