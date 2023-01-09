@@ -40,6 +40,10 @@ class VkBotMenu:
         return self.service
 
     def menu_title(self):
+        '''
+        Заголовок меню
+        :return: str: Строка с описанием меню
+        '''
         comment = f'\n*\t{self.description.strip().lower()}\t*' if self.description else ''
         return "\nсервис {}:{}".format(self.button.upper(), comment)
 
@@ -66,11 +70,16 @@ class VkBotMenu:
                 'filter': list(self.services[service].get('filter', '') for service in self.services)}
 
     def get_filter_string(self, param=''):
+        """ Возвращение списка или строки (в зависимости от параметра) кнопок текущего меню"""
         buttons = self.get_buttons()
         lst = list(button for num, button in enumerate(buttons['buttons']) if buttons['filter'][num])
         return lst if param else ', '.join(lst)
 
     def switch(self, service=''):
+        """
+        Переход в новый режим диалога, где своё меню
+        :param service: новый режим диалога
+        """
         if service in self.services:
             service_title = '{} {}'.format(self.service_name, self.get_buttons()['buttons'])
             self.menu.put({self.service_name: self.service})
@@ -84,6 +93,7 @@ class VkBotMenu:
         return self.service_name
 
     def exit(self):
+        """ Возвращение в предыдущее меню / режим диалога """
         if self.is_advanced:
             service_title = '{} {}'.format(self.service_name, self.get_buttons()['buttons'])
             last_service: dict = self.menu.get()
