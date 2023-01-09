@@ -435,7 +435,7 @@ class VkBot:
     def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
         """
         Выполняется при переходе в другой режим диалога
-        Выводит соответствующий пост с меню команд и клавиатуру нового режима диалога
+        Выводит клавиатуру и соответствующий пост с меню команд нового режима диалога
         :param peer_id:
         :param message:
         :param inline:
@@ -454,6 +454,12 @@ class VkBot:
         return post
 
     def exit(self, inline=False, callback=False) -> bool:
+        """
+        Закрытие текущего режима диалога, смена меню, удаление id последнего сообщения бота
+        :param inline:
+        :param callback:
+        :return: успешность операции закрытия текущего режима диалога бота с клиентом
+        """
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         # text = event.text.lower()
