@@ -200,6 +200,10 @@ class VkBot:
         self.exit()
 
     def search_filter_mode_events(self):
+        """
+        Режим диалога 'Фильтр'
+        :standard :interests :advanced - доступные режимы
+        """
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
