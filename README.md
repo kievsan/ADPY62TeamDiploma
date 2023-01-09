@@ -61,9 +61,9 @@
 >> - _**'dbase name'**_   (например, _'vkinder'_)
 >> - _**'server'**_       (например, _'localhost:5432'_)
 >> - _**'scheme'**_       (например, _'public'_)
->> - _**'overwrite'**_**: True** - затем заменить на False
+>> - _**'overwrite'**_**: True** - при последующих запусках заменить на False
 2. **Vkinder sheme.png**
-> Схема БД (*vkinders, vk_idols*). СУБД **Postgres**. ORM **sqlalchemy**.
+> Схема БД (*vkinders, vk_idols*). Модель БД из ORM **sqlalchemy**.
 >> *vkinders*
 >> -
 > class VKinder:
