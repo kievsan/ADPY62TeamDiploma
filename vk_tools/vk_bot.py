@@ -21,6 +21,7 @@ def split_str_to_list(string=' ', splitter=','):
 
 
 def filter_switch(switch_filter, filter_2):
+    """ Логика переключения фильтров """
     if switch_filter['filter'] and filter_2['filter']:
         switch_filter['filter'] = ''
         filter_2['filter'] = ''
@@ -31,6 +32,7 @@ def filter_switch(switch_filter, filter_2):
 
 
 def filter_switch_2(switch_filter, filter_2, filter_3):
+    """ Логика переключения фильтров """
     if switch_filter['filter'] and filter_2['filter'] and filter_3['filter']:
         switch_filter['filter'] = ''
         filter_2['filter'] = ''
@@ -109,10 +111,10 @@ class VkBot:
         return keyboard.get_keyboard()
 
     def start(self):
-        '''
+        """
         Работа с сообщениями
         События будут обработаны в зависимости от текущего режима диалога клиента и бота
-        '''
+        """
         # Работа с сообщениями
         while True:
             print('Запущен бот группы id =', self.longpoll.group_id)
