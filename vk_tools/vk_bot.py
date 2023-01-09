@@ -352,6 +352,14 @@ class VkBot:
         print('Модуль в разработке!')
 
     def start_mode_events(self):
+        '''
+        Стартовый ("Вежливый") режим диалога
+        Бот отвечает на приветствия или прощания
+        Бот может переходить в следующий режим Matchmaker по соответствующей команде
+         или препираться до бесконечности...
+        Команда настраиваются в bot_menu.cfg
+        :return:
+        '''
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         greetings = split_str_to_list(self._BOT_CONFIG['greetings'])
