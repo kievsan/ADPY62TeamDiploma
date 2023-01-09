@@ -243,6 +243,10 @@ class VkBot:
                 print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
 
     def search_mode_events(self):
+        """
+        Режим диалога 'Поиск'
+        :filter :advisable - доступные режимы
+        """
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
