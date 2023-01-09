@@ -46,7 +46,7 @@ class VkBot:
     """
     _BOT_CONFIG: dict: Настройки бота из 'bot.cfg'
     group_id :  id бота
-    conversations : dict Инфо клиентов бота в многопользовательской среде - беседа, меню, избранные и пр.
+    conversations : dict Окружение клиентов бота в многопользовательской среде - беседа, меню, избранные и пр.
     vk_session : vk_api.vk_api.VkApi Сессия api vk по токену.
                                     Используем внешний vk_api модуль для организации работы бота.
     vk_upload : VkUpload(vk_session) : upload сервис
