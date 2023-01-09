@@ -294,15 +294,19 @@ class VkBot:
                 print(f"\n\t{current['msg']['text']}\n{self.event.obj['text'].lower()}\n")
 
     def start_search_team(self, client_id, search_filter):
-        print('Модуль в разработке!')
+        pass  # реализован у Matchmaker
 
     def works_search_team(self):
-        print('Модуль в разработке!')
+        pass  # реализован у Matchmaker
 
     def favorites_show_mode_events(self):
-        print('Модуль в разработке!')
+        pass  # реализован у Matchmaker
 
     def matchmaker_mode_events(self):
+        """
+        Режим диалога Matchmaker
+        :search :print - доступные режимы
+        """
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
 
@@ -542,7 +546,7 @@ class VkBot:
         return msg
 
     def current(self):
-        """ Текущее окружение клиентов бота в многопользовательской среде - беседа, меню, избранные и пр. """
+        """ Текущее окружение клиента бота в многопользовательской среде - беседа, меню, избранные и пр. """
         peer_id_, peer_id = self.get_event_peer_id()
         if not peer_id:
             return {}
