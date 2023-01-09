@@ -80,6 +80,7 @@ class Matchmaker(VkBot):
         return favorites
 
     def start_favorites_show(self, block_size: int = 10):
+        """ Запуск режима просмотра избранных """
         current = self.current()
         menu_: VkBotMenu = current['menu']
         if not self.db:
@@ -98,6 +99,7 @@ class Matchmaker(VkBot):
             self.favorites_show_mode_events()
 
     def favorites_show_mode_events(self):
+        """ Режим просмотра избранных """
         current = self.current()
         menu_: VkBotMenu = current['menu']
         menu = menu_.services
@@ -124,6 +126,7 @@ class Matchmaker(VkBot):
             return photo_id
 
         def exit_from_favorites_show():
+            """ Подготовка к выходу из режима просмотра избранных """
             self.set_empty_favorites()
             self.db_close()
             self.send_msg(message='Просмотр завершен...', keyboard=self.get_keyboard(empty=True))
