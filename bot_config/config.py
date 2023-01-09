@@ -73,9 +73,9 @@ def get_bot_config_json():
                  'JlxECTemdmVRc5ZGNCe92pN76NdNjXAc4631s5-xzreQi2Ojv59BGidAJvy6VUgLEo5IlZUHGK'
                  '-1JGJir0dHY2k4bPHlky2nk0fks8miDKMrQdO2lvyhqakGVsiz1RCBF3i7hXxx_AGXWdXINew',
         'app_id': '51486212',
-        'app_token': 'vk1.a.lutHpZIC0dBbNzDlEIdUJblrLLZoy5yLzXKg4v8jncRp3Lmpyw'
-                     '-PTBSR0n3YQCMycVMIjiFRuGS9GPXn-bTRMwTft9CMYtplY0N8T6VLjuBMX3yer7XSdNfu5v_'
-                     '-RQ0ptBWstkZ67T3Oq7prprY85Av4sopaF2d3MH3q8dB6ieurqA8W0mtnDIZPVlNT91NUyS9BudVwgXmj68EvLkvVUgg',
+        'app_token': 'vk1.a.lutHpZIC'
+                     '-PT'
+                     '-RQ',
         'service_token': 'a8d6a900a8d6a900a8d6a900b9abc73704aa8d6a8d6a900cba977d4eb1912d13d7a792c',
         'greetings': 'привет, hi, чао, вечер в хату',
         'farewells': 'пока, by, адьюс, не скучай, быть добру'

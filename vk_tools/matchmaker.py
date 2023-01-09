@@ -441,24 +441,18 @@ class Matchmaker(VkBot):
             :return: количество фото и их список взяты из профиля (альбом 'profile')
             """
             url = 'https://api.vk.com/method/photos.get'
-            params = {
-                'owner_id': user['id'],
-                'album_id': album_id,  # служебные: 'profile', 'wall'
-                'access_token': self._BOT_CONFIG['service_token'],
-                'v': '5.131'
-            }
+            params = {'owner_id': user['id'],
+                      'album_id': album_id,  # служебные: 'profile', 'wall'
+                      'access_token': self._BOT_CONFIG['service_token'],
+                      'v': '5.131'}
             res = requests.get(url, params=params).json()
             # pprint(res)  # ----------------------------------
-            response: dict = res.get('response', {})
-            user_photos_count: int = response.get('count', '') if response else 0
-            user_photos: list = response.get('items', '') if response else []
-
-            if not user_photos_count:
-                err: dict = res.get('error', {})
-                if err:
-                    print('\t{} (err{})'.format(err.get("error_msg", ""),
-                                                err.get("error_code", "")))  # ------------------------------
-
+            response = res.get('response', {})
+            user_photos_count: int = response.get('count', 0)
+            user_photos: list = response.get('items', [])
+            err = {} if user_photos_count else response.get('error', {})
+            if err:
+                print(f'\t{err.get("error_msg", "")} (err{err.get("error_code", "")})')  # ---------------------------
             return user_photos_count, user_photos
 
         def get_foto_attachment(photo_url_1: str = '', photo_url_2: str = '', photo_id: str = ''):
