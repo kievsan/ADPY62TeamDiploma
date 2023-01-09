@@ -9,6 +9,11 @@ from bot_config.config import get_config
 class VkBotMenu:
     """
     Хранение активного меню
+    base_menu: dict Все режимы меню из bot_menu.cfg
+    service_name: str Название меню / текущего режима диалога (начиная с 'start-up')
+    is_advanced: int Глубина/уровень текущего меню
+    service: dict Текущее меню / режим диалога
+    menu = queue.LifoQueue()
     """
     def __init__(self, menu='bot_menu.cfg'):
         self.base_menu: dict = get_config('bot_menu', menu)['mode']
@@ -19,6 +24,7 @@ class VkBotMenu:
         self.read_menu()
 
     def read_menu(self):
+        """ Все данные текущего меню """
         self.button = self.service['button']
         self.command = self.service['command']
         self.filter = self.service['filter']
@@ -45,6 +51,14 @@ class VkBotMenu:
         return services
 
     def get_buttons(self):
+        """
+        Словарь с данными текущего меню
+        max: максимальное кол-во кнопок в строке клавиатуры
+        buttons: кнопки меню
+        links: ссылки для кнопок
+        payloads: метки кнопок
+        filter: параметры фильтра для некоторых режимов диалога
+        """
         return {'max': self.max_button,
                 'buttons': list(self.services[service]['button'] for service in self.services),
                 'links': list(self.services[service].get('link', '').lower() for service in self.services),
