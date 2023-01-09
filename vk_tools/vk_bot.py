@@ -435,7 +435,7 @@ class VkBot:
     def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
         """
         Выполняется при переходе в другой режим диалога
-        Выводит клавиатуру и соответствующий пост с меню команд нового режима диалога
+        Меняет текущее меню, выводит клавиатуру и соответствующий пост с меню команд нового режима диалога
         :param peer_id:
         :param message:
         :param inline:
@@ -497,6 +497,7 @@ class VkBot:
         return post
 
     def send_post(self, post, edit_msg_id=0):
+        """ Выводит пост, уже подготовленный для метода 'messages.send' """
         try:
             if edit_msg_id:
                 post['message_id'] = edit_msg_id
@@ -508,6 +509,7 @@ class VkBot:
             print(f'\tfunc "send_post":\t{no_permission}')
 
     def del_post(self, del_msg_ids: str):
+        """ Удаляет пост бота по id поста """
         res_ = {}
         if not del_msg_ids:
             return res_
@@ -521,11 +523,13 @@ class VkBot:
         return res_
 
     def send_msg_use_bot_dialog(self):
+        """ Отправляет пост с предложением перейти в личную беседу """
         if not self.event.from_user:
             self.send_msg(message='{} Юзать сервис переходи в чат с @{}!'.format(
                 f'{self.get_user_name()}!\n', self._BOT_CONFIG["name"]))
 
     def print_message_description(self, msg_id=0):
+        """ Вывод в консоль Описания сообщения """
         msg_id = str(msg_id) if msg_id else ''
         msg = f'\nНовое сообщение'
         msg += f' {msg_id}' if msg_id else ''
