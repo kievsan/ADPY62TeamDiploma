@@ -433,6 +433,16 @@ class VkBot:
             print()
 
     def start_mode(self, peer_id='', message='', inline=False, callback=False, clear_keyboard=False):
+        """
+        Выполняется при переходе в другой режим диалога
+        Выводит соответствующий пост с меню команд и клавиатуру нового режима диалога
+        :param peer_id:
+        :param message:
+        :param inline:
+        :param callback:
+        :param clear_keyboard:
+        :return: пост
+        """
         menu_: VkBotMenu = self.current()['menu']
         if not peer_id:
             peer_id = self.event.message["peer_id"]
