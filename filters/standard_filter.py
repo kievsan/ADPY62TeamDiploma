@@ -32,13 +32,13 @@ def get_standard_filter(search_filter) -> dict:
 
 
 def in_int_deviation(val_dev: int, val: int, check_val: int) -> bool:
-    '''
+    """
     Проверка принадлежности check_val интервалу val_dev интов от значения val
     :param val_dev:
     :param val:
     :param check_val:
     :return:
-    '''
+    """
     dev = val + val_dev
     return val < check_val <= val_dev + dev or val + dev <= check_val < val
 
@@ -165,14 +165,14 @@ class StandardFilter(VkUserFilter):
         return True
 
     def _check_print_person_filter(self, field_name, vk_val, filter_val, filter_deviation) -> bool:
-        '''
+        """
         Проверка и печать результатов по каждому полю из фильтра
         :param field_name: название api-поля из ответа на запрос
         :param vk_val: проверяемые значения полей
         :param filter_val: заданное значение фильтра
         :param filter_deviation: доп.интервал (для возраста)
         :return:
-        '''
+        """
         check_result = False
         user_id = self.user["id"]
         if field_name == 'sex':
