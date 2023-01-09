@@ -60,7 +60,7 @@ class Matchmaker(VkBot):
 
     def add_filter(self, checker: object) -> list:
         """
-        Добавление нового фильтра для поиска подходящего среди пользователей VK
+        Добавление нового фильтра для поиска подходящего пипла среди пользователей VK
         :param checker: объект фильтра
         :return: list: список фильтров
         """
@@ -139,7 +139,7 @@ class Matchmaker(VkBot):
 
         def refresh_carousel_of_favorite_users():
             """
-            Возвращает следующую карусель избранных пользователей
+            Обновляет карусель избранных пользователей
             :return: user_ids: list(str): список id фаворитов
                    : users_info: dict: словарь со скачанной инфой о фаворитах
             """
@@ -226,6 +226,12 @@ class Matchmaker(VkBot):
 
         def create_template(carousel_menu: list,
                             get_carousel=get_next_carousel_of_favorite_users) -> json:
+            """
+            Создать шаблон карусели-клавиатуры для поста
+            :param carousel_menu: кнопки карусели
+            :param get_carousel: данные для карусели
+            :return: Carousel obj.
+            """
             user_ids, users_info = get_carousel()
             print(f'\t{user_ids}')  # ----------------------------------
             template = list()
@@ -248,6 +254,11 @@ class Matchmaker(VkBot):
             return carousel
 
         def create_favorite_users_list_as_link_keyboard(get_carousel=get_next_carousel_of_favorite_users):
+            """
+            Меню из кнопок - ссылок на пользователей
+            :param get_carousel: карусель
+            :return: клавиатура
+            """
             user_ids, users_info = get_carousel()
             print(f'\t{user_ids}')  # ----------------------------------
             keyboard = {"one_time": False, "inline": True, "buttons": []}
