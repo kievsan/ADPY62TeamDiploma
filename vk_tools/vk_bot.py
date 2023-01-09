@@ -71,6 +71,14 @@ class VkBot:
         print(f"Создан объект бота! (id={self.vk_session.app_id})")
 
     def get_keyboard(self, callback=False, inline=False, one_time=False, empty=False) -> dict:
+        """
+        Клавиатура нового сообщения бота
+        :param callback: подключить callback-кнопки
+        :param inline: клавиатура непосредственно в поле диалога / под диалогом
+        :param one_time: одноразовая клавиатура
+        :param empty: пустая клавиатура
+        :return: клавиатура бота
+        """
         keyboard = VkKeyboard(inline=inline, one_time=False if inline else one_time)
         if empty:
             return keyboard.get_empty_keyboard()
@@ -101,6 +109,10 @@ class VkBot:
         return keyboard.get_keyboard()
 
     def start(self):
+        '''
+        Работа с сообщениями
+        События будут обработаны в зависимости от текущего режима диалога клиента и бота
+        '''
         # Работа с сообщениями
         while True:
             print('Запущен бот группы id =', self.longpoll.group_id)
