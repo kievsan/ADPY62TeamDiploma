@@ -542,6 +542,7 @@ class VkBot:
         return msg
 
     def current(self):
+        """ Текущее окружение клиентов бота в многопользовательской среде - беседа, меню, избранные и пр. """
         peer_id_, peer_id = self.get_event_peer_id()
         if not peer_id:
             return {}
@@ -559,6 +560,7 @@ class VkBot:
         return self.conversations.get(peer_id, {})
 
     def set_empty_favorites(self):
+        """ Стартовый 'набор' фаворитов для нового клиента бота """
         current = self.current()
         current['favorites'] = {
             'list_ids': [],
