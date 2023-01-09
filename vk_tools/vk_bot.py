@@ -576,6 +576,7 @@ class VkBot:
         return current['favorites']
 
     def get_event_peer_id(self):
+        """ Получить id инициатора текущего события """
         peer_id = 0
         if self.event:
             if self.event.type == VkBotEventType.MESSAGE_NEW:
@@ -585,6 +586,7 @@ class VkBot:
         return peer_id, str(peer_id) if peer_id else ''
 
     def get_event_msg(self):
+        """ Получить стандартную инфу о текущем событии """
         msg = {}
         if self.event:
             if self.event.type == VkBotEventType.MESSAGE_NEW:
