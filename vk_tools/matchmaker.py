@@ -443,6 +443,7 @@ class Matchmaker(VkBot):
             return True
 
         def exit_from_search_team():
+            """ Подготовка к выходу из режима Найти """
             self.current()['filters'] = []
             menu_.service['last_one_found_id'] = 0
             self.db_close()
@@ -503,6 +504,7 @@ class Matchmaker(VkBot):
             return attachment
 
         def get_photo_attachment(user: dict):
+            """ Поиск фото в профиле пользователя и формирование attachment для поста """
             attachment = []
             for size in ['max', '400', '200', '100', '50']:
                 photo = get_foto_attachment(user.get(f'photo_{size}', ''),
