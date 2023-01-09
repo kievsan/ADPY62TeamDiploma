@@ -149,6 +149,10 @@ class VkBot:
                 continue
 
     def search_standard_filter_mode_events(self):
+        """
+        Режим диалога 'Стандартный фильтр'
+        :male :female :city :younger :older :peers - доступные фильтры/кнопки
+        """
         menu_: VkBotMenu = self.current()['menu']
         menu = menu_.services
         if self.event.type == VkBotEventType.MESSAGE_NEW:
