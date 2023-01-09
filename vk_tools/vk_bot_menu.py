@@ -40,10 +40,10 @@ class VkBotMenu:
         return self.service
 
     def menu_title(self):
-        '''
+        """
         Заголовок меню
         :return: str: Строка с описанием меню
-        '''
+        """
         comment = f'\n*\t{self.description.strip().lower()}\t*' if self.description else ''
         return "\nсервис {}:{}".format(self.button.upper(), comment)
 
@@ -70,7 +70,7 @@ class VkBotMenu:
                 'filter': list(self.services[service].get('filter', '') for service in self.services)}
 
     def get_filter_string(self, param=''):
-        """ Возвращение списка или строки (в зависимости от параметра) кнопок текущего меню"""
+        """ Возвращение списка или строки (в зависимости от параметра) кнопок текущего меню """
         buttons = self.get_buttons()
         lst = list(button for num, button in enumerate(buttons['buttons']) if buttons['filter'][num])
         return lst if param else ', '.join(lst)
