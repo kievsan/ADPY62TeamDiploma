@@ -40,6 +40,7 @@ class Matchmaker(VkBot):
         print('A database {} with tables has been created, access is open.'.format(self._DB_CONFIG['dbase name']))
 
     def get_DSN(self) -> str:
+        """ Строка для подключения к БД """
         db = self._DB_CONFIG
         return 'postgresql://{}:{}@{}/{}'.format(db["login"], db["password"], db["server"], db["dbase name"])
 
@@ -58,6 +59,11 @@ class Matchmaker(VkBot):
         return err
 
     def add_filter(self, checker: object) -> list:
+        """
+        Добавление нового фильтра для поиска подходящего среди пользователей VK
+        :param checker: объект фильтра
+        :return: list: список фильтров
+        """
         filters: list = self.current()['filters']
         filters.append(checker)
         return filters
