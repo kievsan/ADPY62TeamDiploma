@@ -51,7 +51,7 @@ class VkBot:
                                     Используем внешний vk_api модуль для организации работы бота.
     vk_upload : VkUpload(vk_session) : upload сервис
     longpoll : обработчик событий ботом
-    event : VkBotMessageEvent dict : События
+    event : VkBotMessageEvent dict : текущее Событие
     vk_tools : vk_api.tools.VkTools : пул инструментов vk_api
     vk_api_methods : vk_api.vk_api.VkApiMethod : requests-Методы
     """
